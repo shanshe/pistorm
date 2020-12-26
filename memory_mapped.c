@@ -2,6 +2,7 @@
 #include "m68k.h"
 #include "Gayle.h"
 #include <endian.h>
+//#include "a314/a314.h"
 
 #define CHKRANGE(a, b, c) a >= (unsigned int)b && a < (unsigned int)(b + c)
 
@@ -38,6 +39,27 @@ int handle_mapped_read(struct emulator_config *cfg, unsigned int addr, unsigned 
       case MAPTYPE_REGISTER:
         if (CHKRANGE(addr, cfg->map_offset[i], cfg->map_size[i]))
           handle_regs = 1;
+        break;
+      case MAPTYPE_A314:
+        if (CHKRANGE(addr, cfg->map_offset[i], cfg->map_size[i])) {
+          switch(type) {
+            // Since these all return an unsigned int, they could be consolidated into
+            // a single function, say a314_read_memory(address, type) that uses the
+            // operand type to determine what type of value to read.
+            case OP_TYPE_BYTE:
+              //*val = a314_read_memory_8(unsigned int address);
+              return 1;
+              break;
+            case OP_TYPE_WORD:
+              //*val =return a314_read_memory_16(unsigned int address);
+              return 1;
+              break;
+            case OP_TYPE_LONGWORD:
+              //*val =return a314_read_memory_32(unsigned int address);
+              return 1;
+              break;
+          }
+        }
         break;
     }
 
@@ -104,6 +126,26 @@ int handle_mapped_write(struct emulator_config *cfg, unsigned int addr, unsigned
       case MAPTYPE_REGISTER:
         if (CHKRANGE(addr, cfg->map_offset[i], cfg->map_size[i]))
           handle_regs = 1;
+        break;
+      case MAPTYPE_A314:
+        if (CHKRANGE(addr, cfg->map_offset[i], cfg->map_size[i])) {
+          switch(type) {
+            // Similar note to the mapped_read comment block here, except something like
+            // a314_write_memory(address, value, type)
+            case OP_TYPE_BYTE:
+              //a314_write_memory_8(addr, value);
+              return 1;
+              break;
+            case OP_TYPE_WORD:
+              //a314_write_memory_16(addr, value);
+              return 1;
+              break;
+            case OP_TYPE_LONGWORD:
+              //a314_write_memory_32(addr, value);
+              return 1;
+              break;
+          }
+        }
         break;
     }
 

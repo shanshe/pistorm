@@ -10,6 +10,7 @@ typedef enum {
   MAPTYPE_ROM,
   MAPTYPE_RAM,
   MAPTYPE_REGISTER,
+  MAPTYPE_A314,
   MAPTYPE_NUM,
 } map_types;
 

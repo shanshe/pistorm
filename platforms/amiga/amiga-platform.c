@@ -161,6 +161,16 @@ int setup_platform_amiga(struct emulator_config *cfg) {
             cfg->map_id[i][0] = z3_autoconf_id[0];
         }
     }
+
+    // Find any configured emulated A314 and add it to the Z2 PIC list.
+    for (int i = 0; i < MAX_NUM_MAPPED_ITEMS; i++) {
+        if (cfg->map_type[i] == MAPTYPE_A314) {
+            ac_z2_type[ac_z2_pic_count] = ACTYPE_A314;
+            ac_z2_index[ac_z2_pic_count] = i;
+            ac_z2_pic_count++;
+            break;
+        }
+    }
     
     return 0;
 }

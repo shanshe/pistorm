@@ -207,7 +207,7 @@ void autoconfig_write_memory_z3_16(struct emulator_config *cfg, unsigned int add
   }
 
   if (done) {
-    printf("Address of Z3 autoconf RAM assigned to $%.8x\n", ac_base[ac_z3_current_pic]);
+    printf("Address of Z3 autoconf PIC assigned to $%.8x\n", ac_base[ac_z3_current_pic]);
     cfg->map_offset[index] = ac_base[ac_z3_current_pic];
     ac_z3_current_pic++;
     if (ac_z3_current_pic == ac_z3_pic_count)
@@ -280,7 +280,7 @@ void autoconfig_write_memory_8(struct emulator_config *cfg, unsigned int address
       *base &= 0xff0fffff;
       *base |= (value & 0xf0) << (20 - 4);
 
-      if (ac_z2_type[ac_z2_current_pic] == ACTYPE_MAPFAST_Z2) { // fast ram
+      if (ac_z2_type[ac_z2_current_pic] == ACTYPE_A314) { // A314 struct range init
         //a314_set_mem_base_size(*base, cfg->map_size[ac_index[ac_z2_current_pic]]);
       }
       done = 1;
@@ -291,7 +291,7 @@ void autoconfig_write_memory_8(struct emulator_config *cfg, unsigned int address
   }
 
   if (done) {
-    printf("Address of Z2 autoconf RAM assigned to $%.8x\n", ac_base[ac_z2_current_pic]);
+    printf("Address of Z2 autoconf PIC assigned to $%.8x\n", ac_base[ac_z2_current_pic]);
     cfg->map_offset[ac_z2_index[ac_z2_current_pic]] = ac_base[ac_z2_current_pic];
     ac_z2_current_pic++;
     if (ac_z2_current_pic == ac_z2_pic_count)

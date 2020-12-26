@@ -5,6 +5,8 @@
 
 #define M68K_CPU_TYPES M68K_CPU_TYPE_SCC68070
 
+extern unsigned char a314_emulation_enabled;
+
 const char *cpu_types[M68K_CPU_TYPES] = {
   "68000",
   "68010",
@@ -23,6 +25,7 @@ const char *map_type_names[MAPTYPE_NUM] = {
   "rom",
   "ram",
   "register",
+  "a314",
 };
 
 const char *config_item_names[CONFITEM_NUM] = {
@@ -223,9 +226,30 @@ void add_mapping(struct emulator_config *cfg, unsigned int type, unsigned int ad
       fread(cfg->map_data[index], cfg->rom_size[index], 1, in);
       fclose(in);
       break;
+    case MAPTYPE_A314: {
+      // Any additional code needed to initialize the A314 emulation goes here.
+      // Reads/writes from/to the A314 are then parsed along with other mapped
+      // ranges in memory_mapped.c.
+      if (a314_emulation_enabled) {
+        printf("Only one emulated A314 can be mapped.\n");
+        goto mapping_failed;
+      }
+
+      // Uncomment this line and remove the int err = 0 one once the actual a314 sources are in.
+      //int err = a314_init();
+      int err = 0;
+      if (err < 0) {
+        printf("Unable to initialize A314 emulation.\n");
+        goto mapping_failed;
+      }
+      else if (!a314_emulation_enabled) {
+        printf("A314 emulation enabled.\n");
+        a314_emulation_enabled = 1;
+      }
+      break;
+    }
     case MAPTYPE_REGISTER:
     default:
-      break;
       break;
   }
 
