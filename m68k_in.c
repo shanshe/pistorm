@@ -283,7 +283,7 @@ M68KMAKE_OPCODE_HANDLER_HEADER
 #include "m68kcpu.h"
 extern void m68040_fpu_op0(void);
 extern void m68040_fpu_op1(void);
-extern void m68881_mmu_ops();
+extern void m68851_mmu_ops();
 
 /* ======================================================================== */
 /* ========================= INSTRUCTION HANDLERS ========================= */
@@ -8389,7 +8389,7 @@ M68KMAKE_OP(pmmu, 32, ., .)
 {
 	if ((CPU_TYPE_IS_EC020_PLUS(CPU_TYPE)) && (HAS_PMMU))
 	{
-		m68881_mmu_ops();
+		m68851_mmu_ops();
 	}
 	else
 	{

@@ -151,6 +151,12 @@ typedef uint32 uint64;
 /* ============================ GENERAL DEFINES =========================== */
 /* ======================================================================== */
 
+/* MMU constants */
+#define MMU_ATC_ENTRIES 22    // 68851 has 64, 030 has 22
+
+/* instruction cache constants */
+#define M68K_IC_SIZE 128
+
 /* Exception Vectors handled by emulation */
 #define EXCEPTION_RESET                    0
 #define EXCEPTION_BUS_ERROR                2 /* This one is not emulated! */
@@ -168,6 +174,7 @@ typedef uint32 uint64;
 #define EXCEPTION_SPURIOUS_INTERRUPT      24
 #define EXCEPTION_INTERRUPT_AUTOVECTOR    24
 #define EXCEPTION_TRAP_BASE               32
+#define EXCEPTION_MMU_CONFIGURATION       56 // only on 020/030
 
 /* Function codes set by CPU during data/address bus activity */
 #define FUNCTION_CODE_USER_DATA          1
@@ -177,7 +184,7 @@ typedef uint32 uint64;
 #define FUNCTION_CODE_CPU_SPACE          7
 
 /* CPU types for deciding what to emulate */
-#define CPU_TYPE_000	(0x00000001)
+#define CPU_TYPE_000    (0x00000001)
 #define CPU_TYPE_008    (0x00000002)
 #define CPU_TYPE_010    (0x00000004)
 #define CPU_TYPE_EC020  (0x00000008)
@@ -199,7 +206,7 @@ typedef uint32 uint64;
 #define MODE_READ       0x10
 #define MODE_WRITE      0
 
-#define RUN_MODE_NORMAL          0
+#define RUN_MODE_NORMAL              0
 #define RUN_MODE_BERR_AERR_RESET 1
 
 #ifndef NULL
@@ -331,7 +338,7 @@ typedef uint32 uint64;
 #define REG_DA_SAVE           m68ki_cpu.dar_save
 #define REG_D            m68ki_cpu.dar
 #define REG_A            (m68ki_cpu.dar+8)
-#define REG_PPC 		 m68ki_cpu.ppc
+#define REG_PPC          m68ki_cpu.ppc
 #define REG_PC           m68ki_cpu.pc
 #define REG_SP_BASE      m68ki_cpu.sp
 #define REG_USP          m68ki_cpu.sp[0]
@@ -986,6 +993,32 @@ typedef struct
 	uint mmu_tc;
 	uint16 mmu_sr;
 
+	uint mmu_urp_aptr;    /* 040 only */
+	uint mmu_sr_040;
+	uint mmu_atc_tag[MMU_ATC_ENTRIES], mmu_atc_data[MMU_ATC_ENTRIES];
+	uint mmu_atc_rr;
+	uint mmu_tt0, mmu_tt1;
+	uint mmu_itt0, mmu_itt1, mmu_dtt0, mmu_dtt1;
+	uint mmu_acr0, mmu_acr1, mmu_acr2, mmu_acr3;
+	uint mmu_last_page_entry, mmu_last_page_entry_addr;
+
+	uint16 mmu_tmp_sr;      /* temporary hack: status code for ptest and to handle write protection */
+	uint16 mmu_tmp_fc;      /* temporary hack: function code for the mmu (moves) */
+	uint16 mmu_tmp_rw;      /* temporary hack: read/write (1/0) for the mmu */
+	uint8 mmu_tmp_sz;       /* temporary hack: size for mmu */
+
+	uint mmu_tmp_buserror_address;   /* temporary hack: (first) bus error address */
+	uint16 mmu_tmp_buserror_occurred;  /* temporary hack: flag that bus error has occurred from mmu */
+	uint16 mmu_tmp_buserror_fc;   /* temporary hack: (first) bus error fc */
+	uint16 mmu_tmp_buserror_rw;   /* temporary hack: (first) bus error rw */
+	uint16 mmu_tmp_buserror_sz;   /* temporary hack: (first) bus error size` */
+
+	uint8 mmu_tablewalk;             /* set when MMU walks page tables */
+	uint mmu_last_logical_addr;
+	uint ic_address[M68K_IC_SIZE];   /* instruction cache address data */
+	uint ic_data[M68K_IC_SIZE];      /* instruction cache content data */
+	uint8 ic_valid[M68K_IC_SIZE];     /* instruction cache valid flags */
+
 	const uint8* cyc_instruction;
 	const uint8* cyc_exception;
 
@@ -1035,7 +1068,7 @@ char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type);
 
 /* ---------------------------- Read Immediate ---------------------------- */
 
-extern uint pmmu_translate_addr(uint addr_in);
+extern uint32 pmmu_translate_addr(uint32 addr_in, const uint16 rw);
 
 /* Handles all immediate reads, does address error check, function code setting,
  * and prefetching if they are enabled in m68kconf.h
@@ -1048,7 +1081,7 @@ static inline uint m68ki_read_imm_16(void)
 #if M68K_SEPARATE_READS
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 #endif
 
@@ -1083,7 +1116,7 @@ static inline uint m68ki_read_imm_32(void)
 #if M68K_SEPARATE_READS
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 #endif
 
@@ -1142,7 +1175,7 @@ static inline uint m68ki_read_8_fc(uint address, uint fc)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 
 	for (int i = 0; i < read_ranges; i++) {
@@ -1161,7 +1194,7 @@ static inline uint m68ki_read_16_fc(uint address, uint fc)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 
 	for (int i = 0; i < read_ranges; i++) {
@@ -1180,7 +1213,7 @@ static inline uint m68ki_read_32_fc(uint address, uint fc)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 
 	for (int i = 0; i < read_ranges; i++) {
@@ -1199,7 +1232,7 @@ static inline void m68ki_write_8_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	for (int i = 0; i < write_ranges; i++) {
@@ -1219,7 +1252,7 @@ static inline void m68ki_write_16_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	for (int i = 0; i < write_ranges; i++) {
@@ -1239,7 +1272,7 @@ static inline void m68ki_write_32_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	for (int i = 0; i < write_ranges; i++) {
@@ -1261,7 +1294,7 @@ static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	m68k_write_memory_32_pd(ADDRESS_68K(address), value);
