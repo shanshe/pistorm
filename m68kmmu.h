@@ -48,7 +48,7 @@
 #define M68K_MMU_ATC_WRITE_PR        0x02000000
 #define M68K_MMU_ATC_MODIFIED        0x01000000
 #define M68K_MMU_ATC_MASK            0x00ffffff
-#define M68K_MMU_ATC_SHIFT           8;
+#define M68K_MMU_ATC_SHIFT           8
 #define M68K_MMU_ATC_VALID           0x08000000
 
 // MMU Translation Control register
@@ -259,7 +259,7 @@ void pmmu_atc_flush_fc_ea(const uint16 modes)
 }
 
 //template<bool ptest>
-uint16 pmmu_atc_lookup(const uint32 addr_in, const int fc, const uint16 rw,
+uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 					 uint32 *addr_out,int ptest)
 {
 //	MMULOG("%s: LOOKUP addr_in=%08x, fc=%d, ptest=%d, rw=%d\n", __func__, addr_in, fc, ptest,rw);
@@ -371,7 +371,7 @@ void update_descriptor(const uint32 tptr, const int type, const uint32 entry, co
 
 
 //template<bool _long>
-void update_sr(const int type, const uint32 tbl_entry, const int fc,uint16 _long)
+void update_sr(int type, uint32 tbl_entry, int fc,uint16 _long)
 {
 	if (m_side_effects_disabled)
 	{
@@ -412,8 +412,8 @@ void update_sr(const int type, const uint32 tbl_entry, const int fc,uint16 _long
 }
 
 //template<bool ptest>
-uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, const int fc,
-						const int limit, const uint16 rw, uint32 *addr_out, int ptest)
+uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
+						int limit, uint16 rw, uint32 *addr_out, int ptest)
 {
 	int level = 0;
 	const uint32 bits = m68ki_cpu.mmu_tc & 0xffff;
@@ -1272,9 +1272,7 @@ MMULOG("%s: modes=0x%08x\n", __func__, modes);
 				}
 				else
 				{
-MMULOG("%s: pmove\n");
 					m68851_pmove(ea, modes);
-MMULOG("%s: pmove finish\n");
 				}
 				break;
 
