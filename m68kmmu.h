@@ -360,12 +360,12 @@ void update_descriptor(uint32 tptr, int type, uint32 entry, int16 rw)
 			!(entry & M68K_MMU_DF_WP))
 	{
 		MMULOG("%s: set M+U at %08x\n", __func__, tptr);
-		m68ki_write_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
+		m68k_write_memory_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
 	}
 	else if (type != M68K_MMU_DF_DT_INVALID && !(entry & M68K_MMU_DF_USED))
 	{
 		MMULOG("%s: set U at %08x\n", __func__, tptr);
-		m68ki_write_32(tptr, entry | M68K_MMU_DF_USED);
+		m68k_write_memory_32(tptr, entry | M68K_MMU_DF_USED);
 	}
 }
 
@@ -463,7 +463,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 			case M68K_MMU_DF_DT_TABLE_4BYTE:   // valid 4 byte descriptors
 				level++;
 				*addr_out = table + (table_index << 2);
-				tbl_entry = m68ki_read_32(*addr_out);
+				tbl_entry = m68k_read_memory_32(*addr_out);
 				type = tbl_entry & M68K_MMU_DF_DT;
 
 				if (indirect && (type == 2 || type == 3))
@@ -471,7 +471,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 					level++;
 					MMULOG("SHORT INDIRECT DESC: %08x\n", tbl_entry);
 					*addr_out = tbl_entry & M68K_MMU_DF_IND_ADDR_MASK;
-					tbl_entry = m68ki_read_32(*addr_out);
+					tbl_entry = m68k_read_memory_32(*addr_out);
 					type = tbl_entry & M68K_MMU_DF_DT;
 				}
 
@@ -490,8 +490,8 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 			case M68K_MMU_DF_DT_TABLE_8BYTE:   // valid 8 byte descriptors
 				level++;
 				*addr_out = table + (table_index << 3);
-				tbl_entry = m68ki_read_32(*addr_out);
-				tbl_entry2 = m68ki_read_32(*addr_out + 4);
+				tbl_entry = m68k_read_memory_32(*addr_out);
+				tbl_entry2 = m68k_read_memory_32(*addr_out + 4);
 				type = tbl_entry & M68K_MMU_DF_DT;
 
 				if (indirect && (type == 2 || type == 3))
@@ -499,8 +499,8 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 					level++;
 					MMULOG("LONG INDIRECT DESC: %08x%08x\n", tbl_entry, tbl_entry2);
 					*addr_out = tbl_entry2 & M68K_MMU_DF_IND_ADDR_MASK;
-					tbl_entry = m68ki_read_32(*addr_out);
-					tbl_entry2 = m68ki_read_32(*addr_out);
+					tbl_entry = m68k_read_memory_32(*addr_out);
+					tbl_entry2 = m68k_read_memory_32(*addr_out);
 					type = tbl_entry & M68K_MMU_DF_DT;
 				}
 
@@ -722,7 +722,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 		}
 
 		// get the root entry
-		root_entry = m68ki_read_32(root_ptr);
+		root_entry = m68k_read_memory_32(root_ptr);
 
 		// is UDT marked valid?
 		if (root_entry & 2)
@@ -731,7 +731,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 			if ((!(root_entry & 0x8)) && (!ptest) && !m_side_effects_disabled)
 			{
 				root_entry |= 0x8;
-				m68ki_write_32(root_ptr, root_entry);
+				m68k_write_memory_32(root_ptr, root_entry);
 			}
 
 			// PTEST: any write protect bits set in the search tree will set W in SR
@@ -741,7 +741,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 			}
 
 			pointer_ptr = (root_entry & ~0x1ff) + (ptr_idx<<2);
-			pointer_entry = m68ki_read_32(pointer_ptr);
+			pointer_entry = m68k_read_memory_32(pointer_ptr);
 
 			// PTEST: any write protect bits set in the search tree will set W in SR
 			if ((ptest) && (pointer_entry & 4))
@@ -753,7 +753,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 			if ((!(pointer_entry & 0x8)) && (!ptest) && !m_side_effects_disabled)
 			{
 				pointer_entry |= 0x8;
-				m68ki_write_32(pointer_ptr, pointer_entry);
+				m68k_write_memory_32(pointer_ptr, pointer_entry);
 			}
 
 			MMULOG("pointer entry = %08x\n", pointer_entry);
@@ -804,7 +804,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 		}
 
 		page_ptr = pointer_entry + (page_idx<<2);
-		page_entry = m68ki_read_32(page_ptr);
+		page_entry = m68k_read_memory_32(page_ptr);
 		m68ki_cpu.mmu_last_page_entry_addr = page_ptr;
 
 		MMULOG("page_entry = %08x\n", page_entry);
@@ -812,7 +812,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 		// resolve indirect page pointers
 		while ((page_entry & 3) == 2)
 		{
-			page_entry = m68ki_read_32(page_entry & ~0x3);
+			page_entry = m68k_read_memory_32(page_entry & ~0x3);
 			m68ki_cpu.mmu_last_page_entry_addr = (page_entry & ~0x3);
 		}
 		m68ki_cpu.mmu_last_page_entry = page_entry;
@@ -860,7 +860,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 					if (page_entry != m68ki_cpu.mmu_last_page_entry && !m_side_effects_disabled)
 					{
 						m68ki_cpu.mmu_last_page_entry = page_entry;
-						m68ki_write_32(m68ki_cpu.mmu_last_page_entry_addr, m68ki_cpu.mmu_last_page_entry);
+						m68k_write_memory_32(m68ki_cpu.mmu_last_page_entry_addr, m68ki_cpu.mmu_last_page_entry);
 					}
 				}
 				else
