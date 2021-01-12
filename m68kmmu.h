@@ -274,7 +274,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 //MMULOG("%s: LOOKUP continue mmu_atc_tag[%d]=%08x\n", __func__, i, m68ki_cpu.mmu_atc_tag[i]);
 			continue;
 		}
-MMULOG("%s: LOOKUP no continue mmu_atc_tag[%d]=%08x\n", __func__, i, m68ki_cpu.mmu_atc_tag[i]);
+//MMULOG("%s: LOOKUP no continue mmu_atc_tag[%d]=%08x\n", __func__, i, m68ki_cpu.mmu_atc_tag[i]);
 		uint32 atc_data = m68ki_cpu.mmu_atc_data[i];
 
 		if (!ptest && !rw)
@@ -307,7 +307,7 @@ MMULOG("%s: LOOKUP no continue mmu_atc_tag[%d]=%08x\n", __func__, i, m68ki_cpu.m
 			m68ki_cpu.mmu_tmp_sr |= M68K_MMU_SR_BUS_ERROR|M68K_MMU_SR_INVALID;
 		}
 		*addr_out = (atc_data << 8) | (addr_in & ~(~0 << ps));
-		MMULOG("%s: addr_in=%08x, addr_out=%08x, MMU SR %04x\n",
+//		MMULOG("%s: addr_in=%08x, addr_out=%08x, MMU SR %04x\n",
 				__func__, addr_in, *addr_out, m68ki_cpu.mmu_tmp_sr);
 		return 1;
 	}
