@@ -424,7 +424,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 	int pageshift = is;
 
 	addr_in <<= is;
-	MMULOG("MMU mmu_tablewalk: %08X, m68ki_cpu: %08X\n", &m68ki_cpu.mmu_tablewalk,&m68ki_cpu);
+	MMULOG("MMU m68ki_cpu: %08X\n", &m68ki_cpu);
 	m68ki_cpu.mmu_tablewalk = 1;
 
 	if (m68ki_cpu.mmu_tc & M68K_MMU_TC_FCL)
