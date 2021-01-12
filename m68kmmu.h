@@ -581,8 +581,8 @@ uint32 pmmu_translate_addr_with_fc(uint32 addr_in, uint8 fc, uint16 rw, int limi
 	{
 		if ((m68ki_cpu.mmu_tmp_sr & M68K_MMU_SR_BUS_ERROR) || (!rw && (m68ki_cpu.mmu_tmp_sr & M68K_MMU_SR_WRITE_PROTECT)))
 		{
-			MMULOG("set atc hit buserror: addr_in=%08x, addr_out=%x, rw=%x, fc=%d, sz=%d\n",
-					addr_in, addr_out, m68ki_cpu.mmu_tmp_rw, m68ki_cpu.mmu_tmp_fc, m68ki_cpu.mmu_tmp_sz);
+//			MMULOG("set atc hit buserror: addr_in=%08x, addr_out=%x, rw=%x, fc=%d, sz=%d\n",
+//					addr_in, addr_out, m68ki_cpu.mmu_tmp_rw, m68ki_cpu.mmu_tmp_fc, m68ki_cpu.mmu_tmp_sz);
 			pmmu_set_buserror(addr_in);
 		}
 		return addr_out;
