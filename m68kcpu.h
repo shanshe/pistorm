@@ -1076,6 +1076,9 @@ extern uint32 pmmu_translate_addr(uint32 addr_in, const uint16 rw);
 static inline uint m68ki_read_imm_16(void)
 {
 	m68ki_set_fc(FLAG_S | FUNCTION_CODE_USER_PROGRAM); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = FLAG_S | FUNCTION_CODE_USER_PROGRAM;
+	m68ki_cpu.mmu_tmp_rw = 1;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error(REG_PC, MODE_READ, FLAG_S | FUNCTION_CODE_USER_PROGRAM); /* auto-disable (see m68kcpu.h) */
 
 #if M68K_SEPARATE_READS
@@ -1124,6 +1127,9 @@ static inline uint m68ki_read_imm_32(void)
 	uint temp_val;
 
 	m68ki_set_fc(FLAG_S | FUNCTION_CODE_USER_PROGRAM); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = FLAG_S | FUNCTION_CODE_USER_PROGRAM;
+	m68ki_cpu.mmu_tmp_rw = 1;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error(REG_PC, MODE_READ, FLAG_S | FUNCTION_CODE_USER_PROGRAM); /* auto-disable (see m68kcpu.h) */
 
 	if(REG_PC != CPU_PREF_ADDR)
@@ -1172,6 +1178,9 @@ static inline uint m68ki_read_8_fc(uint address, uint fc)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 1;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_BYTE;
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
@@ -1190,6 +1199,9 @@ static inline uint m68ki_read_16_fc(uint address, uint fc)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 1;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error_010_less(address, MODE_READ, fc); /* auto-disable (see m68kcpu.h) */
 
 #if M68K_EMULATE_PMMU
@@ -1209,6 +1221,9 @@ static inline uint m68ki_read_32_fc(uint address, uint fc)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 1;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error_010_less(address, MODE_READ, fc); /* auto-disable (see m68kcpu.h) */
 
 #if M68K_EMULATE_PMMU
@@ -1229,6 +1244,9 @@ static inline void m68ki_write_8_fc(uint address, uint fc, uint value)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 0;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_BYTE;
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
@@ -1248,6 +1266,9 @@ static inline void m68ki_write_16_fc(uint address, uint fc, uint value)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 0;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error_010_less(address, MODE_WRITE, fc); /* auto-disable (see m68kcpu.h) */
 
 #if M68K_EMULATE_PMMU
@@ -1268,6 +1289,9 @@ static inline void m68ki_write_32_fc(uint address, uint fc, uint value)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 0;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error_010_less(address, MODE_WRITE, fc); /* auto-disable (see m68kcpu.h) */
 
 #if M68K_EMULATE_PMMU
@@ -1290,6 +1314,9 @@ static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 {
 	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
+	m68ki_cpu.mmu_tmp_fc = fc;
+	m68ki_cpu.mmu_tmp_rw = 0;
+	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error_010_less(address, MODE_WRITE, fc); /* auto-disable (see m68kcpu.h) */
 
 #if M68K_EMULATE_PMMU
