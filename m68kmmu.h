@@ -130,11 +130,11 @@ void pmmu_set_buserror(uint32 addr_in)
 
 
 // pmmu_atc_add: adds this address to the ATC
-void pmmu_atc_add(uint32 logical, uint32 physical, int fc, const int rw)
+void pmmu_atc_add(uint32 logical, uint32 physical, int fc, int rw)
 {
 	// get page size (i.e. # of bits to ignore); is 10 for Apollo
 	int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
-	const uint32 atc_tag = M68K_MMU_ATC_VALID | ((fc & 7) << 24) | ((logical >> ps) << (ps - 8));
+	uint32 atc_tag = M68K_MMU_ATC_VALID | ((fc & 7) << 24) | ((logical >> ps) << (ps - 8));
 	uint32 atc_data = (physical >> ps) << (ps - 8);
 
 	if (m68ki_cpu.mmu_tmp_sr & (M68K_MMU_SR_BUS_ERROR|M68K_MMU_SR_INVALID|M68K_MMU_SR_SUPERVISOR_ONLY))
@@ -204,14 +204,14 @@ void pmmu_atc_flush()
 	m68ki_cpu.mmu_atc_rr = 0;
 }
 
-int fc_from_modes(const uint16 modes);
+int fc_from_modes(uint16 modes);
 
-void pmmu_atc_flush_fc_ea(const uint16 modes)
+void pmmu_atc_flush_fc_ea(uint16 modes)
 {
-	const int fcmask = (modes >> 5) & 7;
-	const int fc = fc_from_modes(modes) & fcmask;
-	const int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
-	const int mode = (modes >> 10) & 7;
+	int fcmask = (modes >> 5) & 7;
+	int fc = fc_from_modes(modes) & fcmask;
+	int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
+	int mode = (modes >> 10) & 7;
 	uint32 ea;
 
 	switch (mode)
@@ -263,8 +263,8 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 					 uint32 *addr_out,int ptest)
 {
 	MMULOG("%s: LOOKUP addr_in=%08x, fc=%d, ptest=%d, rw=%d\n", __func__, addr_in, fc, ptest,rw);
-	const int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
-	const uint32 atc_tag = M68K_MMU_ATC_VALID | ((fc & 7) << 24) | ((addr_in >> ps) << (ps - 8));
+	int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
+	uint32 atc_tag = M68K_MMU_ATC_VALID | ((fc & 7) << 24) | ((addr_in >> ps) << (ps - 8));
 
 	for (int i = 0; i < MMU_ATC_ENTRIES; i++)
 	{
@@ -273,7 +273,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 		{
 			continue;
 		}
-		const uint32 atc_data = m68ki_cpu.mmu_atc_data[i];
+		uint32 atc_data = m68ki_cpu.mmu_atc_data[i];
 
 		if (!ptest && !rw)
 		{
@@ -317,7 +317,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 	return 0;
 }
 
-uint16 pmmu_match_tt(const uint32 addr_in, const int fc, const uint32 tt, const uint16 rw)
+uint16 pmmu_match_tt(uint32 addr_in, int fc, uint32 tt, uint16 rw)
 {
 	if (!(tt & M68K_MMU_TT_ENABLE))
 	{
@@ -325,12 +325,12 @@ uint16 pmmu_match_tt(const uint32 addr_in, const int fc, const uint32 tt, const 
 	}
 
 	// transparent translation enabled
-	const uint32 address_base = tt & 0xff000000;
-	const uint32 address_mask = ((tt << 8) & 0xff000000) ^ 0xff000000;
-	const uint32 fcmask = (~tt) & 7;
-	const uint32 fcbits = (tt >> 4) & 7;
-	const uint16 rwmask = (~tt & 0x100);
-	const uint16 rwbit = (tt & 0x200);
+	uint32 address_base = tt & 0xff000000;
+	uint32 address_mask = ((tt << 8) & 0xff000000) ^ 0xff000000;
+	uint32 fcmask = (~tt) & 7;
+	uint32 fcbits = (tt >> 4) & 7;
+	uint16 rwmask = (~tt & 0x100);
+	uint16 rwbit = (tt & 0x200);
 
 	if ((addr_in & address_mask) != (address_base & address_mask))
 	{
@@ -351,7 +351,7 @@ uint16 pmmu_match_tt(const uint32 addr_in, const int fc, const uint32 tt, const 
 	return 1;
 }
 
-void update_descriptor(const uint32 tptr, const int type, const uint32 entry, const int16 rw)
+void update_descriptor(uint32 tptr, int type, uint32 entry, int16 rw)
 {
 	if (type == M68K_MMU_DF_DT_PAGE && !rw &&
 			!(entry & M68K_MMU_DF_MODIFIED) &&
@@ -414,9 +414,9 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 						int limit, uint16 rw, uint32 *addr_out, int ptest)
 {
 	int level = 0;
-	const uint32 bits = m68ki_cpu.mmu_tc & 0xffff;
-	const int pagesize = (m68ki_cpu.mmu_tc >> 20) & 0xf;
-	const int is = (m68ki_cpu.mmu_tc >> 16) & 0xf;
+	uint32 bits = m68ki_cpu.mmu_tc & 0xffff;
+	int pagesize = (m68ki_cpu.mmu_tc >> 20) & 0xf;
+	int is = (m68ki_cpu.mmu_tc >> 16) & 0xf;
 	int bitpos = 12;
 	int resolved = 0;
 	int pageshift = is;
@@ -432,10 +432,10 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 
 	do
 	{
-		const int indexbits = (bits >> bitpos) & 0xf;
-		const int table_index  = (bitpos == 16) ? fc : (addr_in >> (32 - indexbits));
+		int indexbits = (bits >> bitpos) & 0xf;
+		int table_index  = (bitpos == 16) ? fc : (addr_in >> (32 - indexbits));
 		bitpos -= 4;
-		const uint16 indirect = (!bitpos || !(bits >> bitpos)) && indexbits;
+		uint16 indirect = (!bitpos || !(bits >> bitpos)) && indexbits;
 		uint32 tbl_entry, tbl_entry2;
 
 //		MMULOG("%s: type %d, table %08x, addr_in %08x, indexbits %d, pageshift %d, indirect %d table_index %08x, rw=%d fc=%d\n",
@@ -663,8 +663,8 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 
 	if (tt0 & M68K_MMU_TT_ENABLE)
 	{
-		const int fcmask[4] = { 4, 4, 0, 0 };
-		const int fcmatch[4] = { 0, 4, 0, 0 };
+		int fcmask[4] = { 4, 4, 0, 0 };
+		int fcmatch[4] = { 0, 4, 0, 0 };
 		uint32 mask = (tt0 >> 16) & 0xff;
 		mask ^= 0xff;
 		mask <<= 24;
@@ -895,7 +895,7 @@ uint32 pmmu_translate_addr(uint32 addr_in, uint16 rw)
 	return addr_out;
 }
 
-int fc_from_modes(const uint16 modes)
+int fc_from_modes(uint16 modes)
 {
 	if ((modes & 0x1f) == 0)
 	{
@@ -938,10 +938,10 @@ int fc_from_modes(const uint16 modes)
 	return 0;
 }
 
-void m68851_pload(const uint32 ea, const uint16 modes)
+void m68851_pload(uint32 ea, uint16 modes)
 {
 	uint32 ltmp = DECODE_EA_32(ea);
-	const int fc = fc_from_modes(modes);
+	int fc = fc_from_modes(modes);
 	uint16 rw = (modes & 0x200);
 
 	MMULOG("%s: PLOAD%c addr=%08x, fc=%d\n", __func__, rw ? 'R' : 'W', ltmp, fc);
@@ -966,14 +966,14 @@ void m68851_pload(const uint32 ea, const uint16 modes)
 	}
 }
 
-void m68851_ptest(const uint32 ea, const uint16 modes)
+void m68851_ptest(uint32 ea, uint16 modes)
 {
 	uint32 v_addr = DECODE_EA_32(ea);
 	uint32 p_addr;
 
-	const int level = (modes >> 10) & 7;
-	const uint16 rw = (modes & 0x200);
-	const int fc = fc_from_modes(modes);
+	int level = (modes >> 10) & 7;
+	uint16 rw = (modes & 0x200);
+	int fc = fc_from_modes(modes);
 
 	MMULOG("PMMU: PTEST%c (%04X) pc=%08x sp=%08x va=%08x fc=%x level=%x a=%d, areg=%d\n",
 			rw ? 'R' : 'W', modes, m68ki_cpu.ppc, REG_A[7], v_addr, fc, level,
