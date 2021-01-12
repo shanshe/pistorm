@@ -1213,8 +1213,6 @@ void m68851_mmu_ops()
 	uint16 modes;
 	uint32 ea = m68ki_cpu.ir & 0x3f;
 
-	MMULOG("%s: !!!\n", __func__);
-
 	// catch the 2 "weird" encodings up front (PBcc)
 	if ((m68ki_cpu.ir & 0xffc0) == 0xf0c0)
 	{
