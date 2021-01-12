@@ -1152,7 +1152,7 @@ static inline uint m68ki_read_imm_32(void)
 
 	temp_val = MASK_OUT_ABOVE_32((temp_val << 16) | MASK_OUT_ABOVE_16(CPU_PREF_DATA));
 	REG_PC += 2;
-	CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(CPU_PREF_ADDR));
+	CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(REG_PC));
 	CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
 
 	return temp_val;
