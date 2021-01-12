@@ -18,7 +18,7 @@ MAINFILES        = emulator.c \
 	platforms/amiga/rtg/rtg-gfx.c \
 	platforms/shared/rtc.c
 
-MUSASHIFILES     = m68kcpu.c m68kdasm.c softfloat/softfloat.c
+MUSASHIFILES     = m68kcpu.c m68kdasm.c softfloat/softfloat.c softfloat/fsincos.c softfloat/fyl2x.c
 MUSASHIGENCFILES = m68kops.c
 MUSASHIGENHFILES = m68kops.h
 MUSASHIGENERATOR = m68kmake
@@ -33,7 +33,7 @@ EXEPATH = ./
 
 CC        = gcc
 WARNINGS  = -Wall -Wextra -pedantic
-CFLAGS    = $(WARNINGS) -march=armv8-a -mfloat-abi=hard -mfpu=neon-fp-armv8 -O3 -g
+CFLAGS    = $(WARNINGS) -march=armv8-a -mfloat-abi=hard -mfpu=neon-fp-armv8 -O3
 LFLAGS    = $(WARNINGS) `sdl2-config --libs`
 
 TARGET = $(EXENAME)$(EXE)
