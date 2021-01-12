@@ -308,7 +308,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 		}
 		*addr_out = (atc_data << 8) | (addr_in & ~(~0 << ps));
 //		MMULOG("%s: addr_in=%08x, addr_out=%08x, MMU SR %04x\n",
-				__func__, addr_in, *addr_out, m68ki_cpu.mmu_tmp_sr);
+//				__func__, addr_in, *addr_out, m68ki_cpu.mmu_tmp_sr);
 		return 1;
 	}
 //	MMULOG("%s: lookup failed\n", __func__);
