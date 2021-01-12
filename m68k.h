@@ -76,7 +76,6 @@ extern "C" {
 #define M68K_SZ_WORD  2
 
 
-
 /* Special interrupt acknowledge values.
  * Use these as special returns from the interrupt acknowledge callback
  * (specified later in this header).

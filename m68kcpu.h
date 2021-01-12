@@ -206,7 +206,7 @@ typedef uint32 uint64;
 #define MODE_READ       0x10
 #define MODE_WRITE      0
 
-#define RUN_MODE_NORMAL              0
+#define RUN_MODE_NORMAL          0
 #define RUN_MODE_BERR_AERR_RESET 1
 
 #ifndef NULL
