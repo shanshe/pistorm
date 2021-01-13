@@ -76,7 +76,7 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
-    usleep(1);
+    usleep(10);
   }
   return args;
 }
