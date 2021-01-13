@@ -1080,14 +1080,13 @@ static inline uint m68ki_read_imm_16(void)
 	m68ki_cpu.mmu_tmp_rw = 1;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error(REG_PC, MODE_READ, FLAG_S | FUNCTION_CODE_USER_PROGRAM); /* auto-disable (see m68kcpu.h) */
-/*
+
 #if M68K_SEPARATE_READS
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
 	    address = pmmu_translate_addr(address,1);
 #endif
 #endif
-*/
 
 #if M68K_EMULATE_PREFETCH
 {
@@ -1122,14 +1121,12 @@ static inline uint m68ki_read_imm_8(void)
 
 static inline uint m68ki_read_imm_32(void)
 {
-/*
 #if M68K_SEPARATE_READS
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
 	    address = pmmu_translate_addr(address,1);
 #endif
 #endif
-*/
 
 #if M68K_EMULATE_PREFETCH
 	uint temp_val;
