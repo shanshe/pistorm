@@ -76,7 +76,7 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
-    usleep(0);
+    usleep(1);
   }
   return args;
 }
@@ -86,7 +86,7 @@ void *iplThread(void *args) {
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300;
 struct emulator_config *cfg = NULL;
-char keyboard_file[256] = "/dev/input/event1";
+char keyboard_file[256] = "/dev/input/event0";
 
 //unsigned char g_kick[524288];
 //unsigned char g_ram[FASTSIZE + 1]; /* RAM */
