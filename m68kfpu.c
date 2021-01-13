@@ -706,6 +706,13 @@ static floatx80 READ_EA_FPE(uint32 ea)
 						fpr = load_extended_float80(ea);
 					}
 					break;
+	      		case 4: // immediate (JFF)
+				{
+				  uint32 ea = REG_PC;
+				  fpr = load_extended_float80(ea);
+				  REG_PC += 12;
+				}
+				break;
 
 				default:
 					fatalerror("M68kFPU: READ_EA_FPE: unhandled mode %d, reg %d, at %08X\n", mode, reg, REG_PC);
