@@ -1323,7 +1323,7 @@ static void fpgen_rm_reg(uint16 w2)
 
 				// handle it right here, the usual opmode bits aren't valid in the FMOVECR case
 				REG_FP[dst] = source;
-	     		SET_CONDITION_CODES(REG_FP[dst]); // JFF when destination is a register, we HAVE to update FPCR
+//	     		SET_CONDITION_CODES(REG_FP[dst]); // JFF when destination is a register, we HAVE to update FPCR
 				USE_CYCLES(4);
 				return;
 			}
@@ -1351,7 +1351,7 @@ static void fpgen_rm_reg(uint16 w2)
 			sint32 temp;
 			temp = floatx80_to_int32(source);
 			REG_FP[dst] = int32_to_floatx80(temp);
-	  		SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
+//	  		SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
 			break;
 		}
 		case 0x03:		// FINTRZ
@@ -1359,7 +1359,7 @@ static void fpgen_rm_reg(uint16 w2)
 			sint32 temp;
 			temp = floatx80_to_int32_round_to_zero(source);
 			REG_FP[dst] = int32_to_floatx80(temp);
-			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
+//			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
 			break;
 		}
 		case 0x04:		// FSQRT
@@ -1451,7 +1451,7 @@ static void fpgen_rm_reg(uint16 w2)
 		case 0x20:		// FDIV
 		{
 			REG_FP[dst] = floatx80_div(REG_FP[dst], source);
-		    SET_CONDITION_CODES(REG_FP[dst]); // JFF
+//		    SET_CONDITION_CODES(REG_FP[dst]); // JFF
 			USE_CYCLES(43);
 			break;
 		}
