@@ -351,19 +351,19 @@ uint16 pmmu_match_tt(uint32 addr_in, int fc, uint32 tt, uint16 rw)
 	return 1;
 }
 
-void update_descriptor(uint32 tptr, int type, uint32 entry, int16 rw)
+void update_descriptor(uint32 tptr, int type, uint32 entry, int16 rw, int fc)
 {
 	if (type == M68K_MMU_DF_DT_PAGE && !rw &&
 			!(entry & M68K_MMU_DF_MODIFIED) &&
 			!(entry & M68K_MMU_DF_WP))
 	{
 		MMULOG("%s: set M+U at %08x\n", __func__, tptr);
-		m68ki_write_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
+		m68ki_write_32_fc(tptr, fc, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
 	}
 	else if (type != M68K_MMU_DF_DT_INVALID && !(entry & M68K_MMU_DF_USED))
 	{
 		MMULOG("%s: set U at %08x\n", __func__, tptr);
-		m68ki_write_32(tptr, entry | M68K_MMU_DF_USED);
+		m68ki_write_32_fc(tptr, fc, entry | M68K_MMU_DF_USED);
 	}
 }
 
@@ -480,7 +480,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 					update_sr(type, tbl_entry, fc,0);
 					if (!ptest)
 					{
-						update_descriptor(*addr_out, type, tbl_entry, rw);
+						update_descriptor(*addr_out, type, tbl_entry, rw, fc);
 					}
 				}
 				break;
@@ -509,7 +509,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 					update_sr(type, tbl_entry, fc,1);
 					if (!ptest)
 					{
-						update_descriptor(*addr_out, type, tbl_entry, rw);
+						update_descriptor(*addr_out, type, tbl_entry, rw, fc);
 					}
 				}
 				break;
