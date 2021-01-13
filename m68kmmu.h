@@ -358,12 +358,12 @@ void update_descriptor(uint32 tptr, int type, uint32 entry, int16 rw)
 			!(entry & M68K_MMU_DF_WP))
 	{
 		MMULOG("%s: set M+U at %08x\n", __func__, tptr);
-		m68k_write_memory_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
+		m68ki_write_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
 	}
 	else if (type != M68K_MMU_DF_DT_INVALID && !(entry & M68K_MMU_DF_USED))
 	{
 		MMULOG("%s: set U at %08x\n", __func__, tptr);
-		m68k_write_memory_32(tptr, entry | M68K_MMU_DF_USED);
+		m68ki_write_32(tptr, entry | M68K_MMU_DF_USED);
 	}
 }
 
@@ -729,7 +729,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 			if ((!(root_entry & 0x8)) && (!ptest) && !m_side_effects_disabled)
 			{
 				root_entry |= 0x8;
-				m68k_write_memory_32(root_ptr, root_entry);
+				m68ki_write_32_fc(root_ptr, fc, root_entry);
 			}
 
 			// PTEST: any write protect bits set in the search tree will set W in SR
@@ -751,7 +751,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 			if ((!(pointer_entry & 0x8)) && (!ptest) && !m_side_effects_disabled)
 			{
 				pointer_entry |= 0x8;
-				m68k_write_memory_32(pointer_ptr, pointer_entry);
+				m68ki_write_32_fc(pointer_ptr, fc, pointer_entry);
 			}
 
 			MMULOG("pointer entry = %08x\n", pointer_entry);
@@ -858,7 +858,7 @@ uint32 pmmu_translate_addr_with_fc_040(uint32 addr_in, uint8 fc, uint8 ptest)
 					if (page_entry != m68ki_cpu.mmu_last_page_entry && !m_side_effects_disabled)
 					{
 						m68ki_cpu.mmu_last_page_entry = page_entry;
-						m68k_write_memory_32(m68ki_cpu.mmu_last_page_entry_addr, m68ki_cpu.mmu_last_page_entry);
+						m68ki_write_32_fc(m68ki_cpu.mmu_last_page_entry_addr, fc, m68ki_cpu.mmu_last_page_entry);
 					}
 				}
 				else
