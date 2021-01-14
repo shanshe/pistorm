@@ -88,8 +88,6 @@ void InitGayle(void) {
     if (strcmp(hdd_image_file[0] + (strlen(hdd_image_file[0]) - 3), "img") != 0) {
       printf("No header present on HDD image %s.\n", hdd_image_file[0]);
       ide_attach_hdf(ide0, 0, fd);
-      close(fd);
-      return;
     }
     else {
       printf("Attaching HDD image with header.\n");

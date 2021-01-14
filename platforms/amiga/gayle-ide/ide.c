@@ -144,7 +144,7 @@ static off_t xlate_block(struct ide_taskfile *t)
 /*    fprintf(stderr, "XLATE LBA %02X:%02X:%02X:%02X\n", 
       t->lba4, t->lba3, t->lba2, t->lba1);*/
     if (d->lba)
-      return (d->header_present) ? 2 : 0 + (((t->lba4 & DEVH_HEAD) << 24) | (t->lba3 << 16) | (t->lba2 << 8) | t->lba1);
+      return (((t->lba4 & DEVH_HEAD) << 24) | (t->lba3 << 16) | (t->lba2 << 8) | t->lba1) + (d->header_present) ? 2 : 0;
     ide_fault(d, "LBA on non LBA drive");
   }
 
@@ -162,7 +162,7 @@ static off_t xlate_block(struct ide_taskfile *t)
   /* Sector 1 is first */
   /* Images generally go cylinder/head/sector. This also matters if we ever
      implement more advanced geometry setting */
-  return (d->header_present) ? 1 : -1 + ((cyl * d->heads) + (t->lba4 & DEVH_HEAD)) * d->sectors + t->lba1;
+  return ((cyl * d->heads) + (t->lba4 & DEVH_HEAD)) * d->sectors + t->lba1 + (d->header_present) ? 1 : -1;
 }
 
 /* Indicate the drive is ready */
