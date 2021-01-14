@@ -69,14 +69,15 @@ void *iplThread(void *args) {
       irq = 0;
 
     if (gayle_emulation_enabled) {
-      if ((gayle_int & 0x80) && get_ide(0)->drive->intrq) {
+      if (((gayle_int & 0x80) || gayle_a4k_int) && get_ide(0)->drive->intrq) {
+        //get_ide(0)->drive->intrq = 0;
         gayleirq = 1;
         m68k_end_timeslice();
       }
       else
         gayleirq = 0;
     }
-    usleep(10);
+    usleep(0);
   }
   return args;
 }
@@ -260,8 +261,7 @@ disasm_run:;
   //usleep(0);
     // FIXME: Rework this to use keyboard events instead.
     while (get_key_char(&c, &c_code, &c_type)) {
-
-      if (c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
+      if (c, && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
         kb_hook_enabled = 1;
         printf("Keyboard hook enabled.\n");
       }
@@ -308,7 +308,7 @@ disasm_run:;
         }
         if (c == 'R') {
           cpu_pulse_reset();
-          m68k_pulse_reset();
+          //m68k_pulse_reset();
           printf("CPU emulation reset.\n");
         }
         if (c == 'q') {
