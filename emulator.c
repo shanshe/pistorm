@@ -69,8 +69,7 @@ void *iplThread(void *args) {
       irq = 0;
 
     if (gayle_emulation_enabled) {
-      if (((gayle_int & 0x80) || gayle_a4k_int) && get_ide(0)->drive->intrq) {
-        //get_ide(0)->drive->intrq = 0;
+      if ((gayle_int & 0x80) && get_ide(0)->drive->intrq) {
         gayleirq = 1;
         m68k_end_timeslice();
       }

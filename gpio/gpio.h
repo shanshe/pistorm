@@ -85,7 +85,6 @@
   }; \
 
 extern uint8_t gayle_int;
-extern uint8_t gayle_a4k_int;
 
 void setup_io();
 void gpio_enable_200mhz();

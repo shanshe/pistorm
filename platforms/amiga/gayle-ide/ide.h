@@ -55,7 +55,6 @@ struct ide_drive {
   int fd;
   off_t offset;
   int length;
-  uint8_t header_present;
 };
 
 struct ide_controller {
@@ -78,8 +77,6 @@ void ide_write_latched(struct ide_controller *c, uint8_t r, uint8_t v);
 
 struct ide_controller *ide_allocate(const char *name);
 int ide_attach(struct ide_controller *c, int drive, int fd);
-int ide_attach_hdf(struct ide_controller *c, int drive, int fd);
-int ide_make_ident(uint16_t c, uint8_t h, uint8_t s, char *name, uint16_t *target);
 void ide_detach(struct ide_drive *d);
 void ide_free(struct ide_controller *c);
 
