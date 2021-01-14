@@ -1386,7 +1386,7 @@ static void fpgen_rm_reg(uint16 w2)
 		case 0x0e:      // FSIN
 		{
 			REG_FP[dst] = source;
-			floatx80_fsin(REG_FP[dst]);
+			floatx80_fsin(&REG_FP[dst]);
 			SET_CONDITION_CODES(REG_FP[dst]);
 			USE_CYCLES(75);
 			break;
@@ -1394,7 +1394,7 @@ static void fpgen_rm_reg(uint16 w2)
 		case 0x0f:      // FTAN
 		{
 			REG_FP[dst] = source;
-			floatx80_ftan(REG_FP[dst]);
+			floatx80_ftan(&REG_FP[dst]);
 			SET_CONDITION_CODES(REG_FP[dst]);
 			USE_CYCLES(75);
 			break;
@@ -1439,7 +1439,7 @@ static void fpgen_rm_reg(uint16 w2)
 		case 0x1d:      // FCOS
 		{
 			REG_FP[dst] = source;
-			floatx80_fcos(REG_FP[dst]);
+			floatx80_fcos(&REG_FP[dst]);
 			SET_CONDITION_CODES(REG_FP[dst]);
 			USE_CYCLES(75);
 			break;
