@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include "../../../config_file/config_file.h"
 
 #include "ide.h"
 
@@ -143,7 +144,7 @@ static off_t xlate_block(struct ide_taskfile *t)
 /*    fprintf(stderr, "XLATE LBA %02X:%02X:%02X:%02X\n", 
       t->lba4, t->lba3, t->lba2, t->lba1);*/
     if (d->lba)
-      return 2 + (((t->lba4 & DEVH_HEAD) << 24) | (t->lba3 << 16) | (t->lba2 << 8) | t->lba1);
+      return (d->header_present) ? 2 : 0 + (((t->lba4 & DEVH_HEAD) << 24) | (t->lba3 << 16) | (t->lba2 << 8) | t->lba1);
     ide_fault(d, "LBA on non LBA drive");
   }
 
@@ -161,7 +162,7 @@ static off_t xlate_block(struct ide_taskfile *t)
   /* Sector 1 is first */
   /* Images generally go cylinder/head/sector. This also matters if we ever
      implement more advanced geometry setting */
-  return 1 + ((cyl * d->heads) + (t->lba4 & DEVH_HEAD)) * d->sectors + t->lba1;
+  return (d->header_present) ? 1 : -1 + ((cyl * d->heads) + (t->lba4 & DEVH_HEAD)) * d->sectors + t->lba1;
 }
 
 /* Indicate the drive is ready */
@@ -755,10 +756,57 @@ int ide_attach(struct ide_controller *c, int drive, int fd)
   d->heads = d->identify[3];
   d->sectors = d->identify[6];
   d->cylinders = le16(d->identify[1]);
+  d->header_present = 1;
   if (d->identify[49] & le16(1 << 9))
     d->lba = 1;
   else
     d->lba = 0;
+  return 0;
+}
+
+// Attach a headerless HDD image to the controller
+int ide_attach_hdf(struct ide_controller *c, int drive, int fd)
+{
+  struct ide_drive *d = &c->drive[drive];
+  if (d->present) {
+    printf("[IDE/HDL] Drive already attached.\n");
+    return -1;
+  }
+
+  d->fd = fd;
+  d->present = 1;
+  d->lba = 0;
+
+  d->heads = 255;
+  d->sectors = 63;
+  d->header_present = 0;
+
+  uint64_t file_size = lseek(fd, 0, SEEK_END);
+  lseek(fd, 1024, SEEK_SET);
+
+  if (file_size < 500 * SIZE_MEGA) {
+    d->heads = 16;
+  }
+  else if (file_size < 1000 * SIZE_MEGA) {
+    d->heads = 32;
+  }
+  else if (file_size < 2000 * SIZE_MEGA) {
+    d->heads = 64;
+  }
+  else if (file_size < (uint64_t)400 * SIZE_MEGA) {
+    d->heads = 128;
+  }
+
+  d->cylinders = (file_size / 512) / (d->sectors * d->heads);
+
+  printf("[IDE/HDL] Cylinders: %d Heads: %d Sectors: %d\n", d->cylinders, d->heads, d->sectors);
+
+  if (file_size >= 4 * 1000 * 1000) {
+    d->lba = 1;
+  }
+
+  ide_make_ident(d->cylinders, d->heads, d->sectors, "PiSTORM HDF", d->identify);
+
   return 0;
 }
 
@@ -835,6 +883,39 @@ static void make_serial(uint16_t *p)
   srand(getpid()^time(NULL));
   snprintf(buf, 21, "%08d%08d%04d", rand(), rand(), rand());
   make_ascii(p, buf, 20);
+}
+
+int ide_make_ident(uint16_t c, uint8_t h, uint8_t s, char *name, uint16_t *target)
+{
+  uint16_t *ident = target;
+  uint32_t sectors;
+
+  memset(ident, 0, 512);
+  memcpy(ident, ide_magic, 8);
+
+  memset(ident, 0, 8);
+  ident[0] = le16((1 << 15) | (1 << 6));	/* Non removable */
+  make_serial(ident + 10);
+  ident[47] = 0; /* no read multi for now */
+  ident[51] = le16(240 /* PIO2 */ << 8);	/* PIO cycle time */
+  ident[53] = le16(1);		/* Geometry words are valid */
+
+  make_ascii(ident + 23, "A001.001", 8);
+  make_ascii(ident + 27, name, 40);
+
+  ident[1] = le16(c);
+  ident[3] = le16(h);
+  ident[6] = le16(s);
+  ident[54] = ident[1];
+  ident[55] = ident[3];
+  ident[56] = ident[6];
+  sectors = c * h * s;
+  ident[57] = le16(sectors & 0xFFFF);
+  ident[58] = le16(sectors >> 16);
+  ident[60] = ident[57];
+  ident[61] = ident[58];
+
+  return 0;
 }
 
 int ide_make_drive(uint8_t type, int fd)

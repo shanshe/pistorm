@@ -258,8 +258,6 @@ disasm_run:;
         m68k_set_irq(0);
     }
 
-  //usleep(0);
-    // FIXME: Rework this to use keyboard events instead.
     while (get_key_char(&c, &c_code, &c_type)) {
       if (c && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
         kb_hook_enabled = 1;

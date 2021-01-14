@@ -84,7 +84,17 @@ void InitGayle(void) {
   if (fd == -1) {
     printf("HDD Image %s failed open\n", hdd_image_file[0]);
   } else {
-    ide_attach(ide0, 0, fd);
+    printf("Attaching HDD image %s.\n", hdd_image_file[0]);
+    if (strcmp(hdd_image_file[0] + (strlen(hdd_image_file[0]) - 3), "img") != 0) {
+      printf("No header present on HDD image %s.\n", hdd_image_file[0]);
+      ide_attach_hdf(ide0, 0, fd);
+      close(fd);
+      return;
+    }
+    else {
+      printf("Attaching HDD image with header.\n");
+      ide_attach(ide0, 0, fd);
+    }
     ide_reset_begin(ide0);
     printf("HDD Image %s attached\n", hdd_image_file[0]);
   }
