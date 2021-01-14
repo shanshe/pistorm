@@ -372,14 +372,14 @@ int sf_fsincos(floatx80 a, floatx80 *sin_a, floatx80 *cos_a)
 	return 0;
 }
 
-int floatx80_fsin(floatx80 a)
+int floatx80_fsin(floatx80 *a)
 {
-	return sf_fsincos(a, &a, 0);
+	return sf_fsincos(*a, a, 0);
 }
 
-int floatx80_fcos(floatx80 a)
+int floatx80_fcos(floatx80 *a)
 {
-	return sf_fsincos(a, 0, &a);
+	return sf_fsincos(*a, 0, a);
 }
 
 // =================================================
@@ -409,27 +409,27 @@ int floatx80_fcos(floatx80 a)
 //           cos(x)
 //
 
-int floatx80_ftan(floatx80 a)
+int floatx80_ftan(floatx80 *a)
 {
 	uint64_t aSig0, aSig1 = 0;
 	int32_t aExp, zExp, expDiff;
 	int aSign, zSign;
 	int q = 0;
 
-	aSig0 = extractFloatx80Frac(a);
-	aExp = extractFloatx80Exp(a);
-	aSign = extractFloatx80Sign(a);
+	aSig0 = extractFloatx80Frac(*a);
+	aExp = extractFloatx80Exp(*a);
+	aSign = extractFloatx80Sign(*a);
 
 	/* invalid argument */
 	if (aExp == 0x7FFF) {
 		if ((uint64_t) (aSig0<<1))
 		{
-			a = propagateFloatx80NaNOneArg(a);
+			*a = propagateFloatx80NaNOneArg(*a);
 			return 0;
 		}
 
 		float_raise(float_flag_invalid);
-		a = floatx80_default_nan;
+		*a = floatx80_default_nan;
 		return 0;
 	}
 
@@ -457,7 +457,7 @@ int floatx80_ftan(floatx80 a)
 
 	if (expDiff < -1) {    // doesn't require reduction
 		if (expDiff <= -68) {
-			a = packFloatx80(aSign, aExp, aSig0);
+			*a = packFloatx80(aSign, aExp, aSig0);
 			return 0;
 		}
 		zExp = aExp;
@@ -483,9 +483,9 @@ int floatx80_ftan(floatx80 a)
 		r = float128_div(sin_r, cos_r);
 	}
 
-	a = float128_to_floatx80(r);
+	*a = float128_to_floatx80(r);
 	if (zSign)
-		a = floatx80_chs(a);
+		*a = floatx80_chs(*a);
 
 	return 0;
 }
