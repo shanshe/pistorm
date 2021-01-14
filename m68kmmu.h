@@ -489,7 +489,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 				level++;
 				*addr_out = table + (table_index << 3);
 				tbl_entry = m68k_read_memory_32(*addr_out);
-				tbl_entry2 = m68k_read_memory_32(*addr_out + 4);
+				tbl_entry2 = m68k_read_memory_32((*addr_out) + 4);
 				type = tbl_entry & M68K_MMU_DF_DT;
 
 				if (indirect && (type == 2 || type == 3))
