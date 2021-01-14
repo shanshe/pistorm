@@ -229,7 +229,7 @@ void pmmu_atc_flush_fc_ea(uint16 modes)
 			if ((e & M68K_MMU_ATC_VALID) && ((e >> 24) & fcmask) == fc)
 			{
 				MMULOG("flushing entry %08x\n", e);
-				e = 0;
+				m68ki_cpu.mmu_atc_tag[i] = 0;
 			}
 		}
 		break;
@@ -247,7 +247,7 @@ void pmmu_atc_flush_fc_ea(uint16 modes)
 				( (e << ps) == (ea >> 8 << ps) ))
 			{
 				MMULOG("flushing entry %08x\n", e);
-				e = 0;
+				m68ki_cpu.mmu_atc_tag[i] = 0;
 			}
 		}
 		break;
