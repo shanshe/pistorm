@@ -140,29 +140,34 @@ static off_t xlate_block(struct ide_taskfile *t)
   struct ide_drive *d = t->drive;
   uint16_t cyl;
 
-  if (t->lba4 & DEVH_LBA) {
+  if (d->controller->lba4 & DEVH_LBA) {
 /*    fprintf(stderr, "XLATE LBA %02X:%02X:%02X:%02X\n", 
       t->lba4, t->lba3, t->lba2, t->lba1);*/
     if (d->lba)
-      return ((d->header_present) ? 2 : 0) + (((t->lba4 & DEVH_HEAD) << 24) | (t->lba3 << 16) | (t->lba2 << 8) | t->lba1);
+      return ((d->header_present) ? 2 : 0) + (((t->drive->controller->lba4 & DEVH_HEAD) << 24) | (t->drive->controller->lba3 << 16) | (t->drive->controller->lba2 << 8) | t->drive->controller->lba1);
     ide_fault(d, "LBA on non LBA drive");
   }
 
   /* Some well known software asks for 0/0/0 when it means 0/0/1. Drives appear
      to interpret sector 0 as sector 1 */
-  if (t->lba1 == 0) {
+  if (t->drive->controller->lba1 == 0) {
     fprintf(stderr, "[Bug: request for sector offset 0].\n");
-    t->lba1 = 1;
+    t->drive->controller->lba1 = 1;
   }
-  cyl = (t->lba3 << 8) | t->lba2;
+  cyl = (t->drive->controller->lba3 << 8) | t->drive->controller->lba2;
   /* fprintf(stderr, "(H %d C %d S %d)\n", t->lba4 & DEVH_HEAD, cyl, t->lba1); */
-  if (t->lba1 == 0 || t->lba1 > d->sectors || t->lba4 >= d->heads || cyl >= d->cylinders) {
+  if (t->drive->controller->lba1 == 0 || t->drive->controller->lba1 > d->sectors || t->drive->controller->lba4 >= d->heads || cyl >= d->cylinders) {
     return -1;
   }
   /* Sector 1 is first */
   /* Images generally go cylinder/head/sector. This also matters if we ever
      implement more advanced geometry setting */
-  return ((d->header_present) ? 1 : -1) + ((cyl * d->heads) + (t->lba4 & DEVH_HEAD)) * d->sectors + t->lba1;
+  //off_t ret = ((d->header_present) ? 1 : -1) + ((cyl * d->heads) + (t->drive->controller->lba4 & DEVH_HEAD)) * d->sectors + t->drive->controller->lba1;
+  //printf("Non-LBA xlate block %lX.\n", ret);
+  //printf("Cyl: %d Heads: %d Sectors: %d\n", cyl, d->heads, d->sectors);
+  //printf("LBA1: %.2X LBA2: %.2X LBA3: %.2X LBA4: %.2X\n", t->drive->controller->lba1, t->drive->controller->lba2, t->drive->controller->lba3, t->drive->controller->lba4);
+
+  return ((d->header_present) ? 1 : -1) + ((cyl * d->heads) + (t->drive->controller->lba4 & DEVH_HEAD)) * d->sectors + t->drive->controller->lba1;
 }
 
 /* Indicate the drive is ready */
@@ -212,10 +217,10 @@ static void data_out_state(struct ide_taskfile *tf)
 static void edd_setup(struct ide_taskfile *tf)
 {
   tf->error = 0x01;		/* All good */
-  tf->lba1 = 0x01;		/* EDD always updates drive 0 */
-  tf->lba2 = 0x00;
-  tf->lba3 = 0x00;
-  tf->lba4 = 0x00;
+  tf->drive->controller->lba1 = 0x01;		/* EDD always updates drive 0 */
+  tf->drive->controller->lba2 = 0x00;
+  tf->drive->controller->lba3 = 0x00;
+  tf->drive->controller->lba4 = 0x00;
   tf->count = 0x01;
   ready(tf);
 }
@@ -233,6 +238,8 @@ void ide_reset(struct ide_controller *c)
     edd_setup(&c->drive[1].taskfile);
     c->drive[1].taskfile.status = ST_DRDY;
     c->drive[1].eightbit = 0;
+  }
+  if (c->selected != 0) {
   }
   c->selected = 0;
 }
@@ -287,7 +294,7 @@ static void cmd_initparam_complete(struct ide_taskfile *tf)
 {
   struct ide_drive *d = tf->drive;
   /* We only support the current mapping */
-  if (tf->count != d->sectors || (tf->lba4 & DEVH_HEAD) + 1 != d->heads) {
+  if (tf->count != d->sectors || (tf->drive->controller->lba4 & DEVH_HEAD) + 1 != d->heads) {
     tf->status |= ST_ERR;
     tf->error |= ERR_ABRT;
     tf->drive->failed = 1;		/* Report ID NF until fixed */
@@ -427,20 +434,20 @@ static void cmd_writesectors_complete(struct ide_taskfile *tf)
 
 static void ide_set_error(struct ide_drive *d)
 {
-  d->taskfile.lba4 &= ~DEVH_HEAD;
+  d->controller->lba4 &= ~DEVH_HEAD;
 
-  if (d->taskfile.lba4 & DEVH_LBA) {
-    d->taskfile.lba1 = d->offset & 0xFF;
-    d->taskfile.lba2 = (d->offset >> 8) & 0xFF;
-    d->taskfile.lba3 = (d->offset >> 16) & 0xFF;
-    d->taskfile.lba4 |= (d->offset >> 24) & DEVH_HEAD;
+  if (d->controller->lba4 & DEVH_LBA) {
+    d->controller->lba1 = d->offset & 0xFF;
+    d->controller->lba2 = (d->offset >> 8) & 0xFF;
+    d->controller->lba3 = (d->offset >> 16) & 0xFF;
+    d->controller->lba4 |= (d->offset >> 24) & DEVH_HEAD;
   } else {
-    d->taskfile.lba1 = d->offset % d->sectors + 1;
+    d->controller->lba1 = d->offset % d->sectors + 1;
     d->offset /= d->sectors;
-    d->taskfile.lba4 |= d->offset / (d->cylinders * d->sectors);
+    d->controller->lba4 |= d->offset / (d->cylinders * d->sectors);
     d->offset %= (d->cylinders * d->sectors);
-    d->taskfile.lba2 = d->offset & 0xFF;
-    d->taskfile.lba3 = (d->offset >> 8) & 0xFF;
+    d->controller->lba2 = d->offset & 0xFF;
+    d->controller->lba3 = (d->offset >> 8) & 0xFF;
   }
   d->taskfile.count = d->length;
   d->taskfile.status |= ST_ERR;
@@ -608,13 +615,13 @@ uint8_t ide_read8(struct ide_controller *c, uint8_t r)
     case ide_sec_count:
       return t->count;
     case ide_lba_low:
-      return t->lba1;
+      return c->lba1;
     case ide_lba_mid:
-      return t->lba2;
+      return c->lba2;
     case ide_lba_hi:
-      return t->lba3;
+      return c->lba3;
     case ide_lba_top:
-      return t->lba4;
+      return c->lba4 | ((c->selected) ? 0x10 : 0x00);
     case ide_status_r:
       d->intrq = 0;		/* Acked */
     case ide_altst_r:
@@ -642,6 +649,8 @@ void ide_write8(struct ide_controller *c, uint8_t r, uint8_t v)
     }
   }
 
+  uint8_t ve;
+
   switch(r) {
     case ide_data:
       ide_data_out(d, v, 1);
@@ -653,17 +662,17 @@ void ide_write8(struct ide_controller *c, uint8_t r, uint8_t v)
       t->count = v;
       break;
     case ide_lba_low:
-      t->lba1 = v;
+      c->lba1 = v;
       break;
     case ide_lba_mid:
-      t->lba2 = v;
+      c->lba2 = v;
       break;
     case ide_lba_hi:
-      t->lba3 = v;
+      c->lba3 = v;
       break;
     case ide_lba_top:
       c->selected = (v & DEVH_DEV) ? 1 : 0;
-      c->drive[c->selected].taskfile.lba4 = v & (DEVH_HEAD|DEVH_DEV|DEVH_LBA);
+      c->lba4 = v & (DEVH_HEAD|/*DEVH_DEV|*/DEVH_LBA);
       break;
     case ide_command_w:
       t->command = v; 
@@ -793,7 +802,7 @@ int ide_attach_hdf(struct ide_controller *c, int drive, int fd)
   else if (file_size < 2000 * SIZE_MEGA) {
     d->heads = 64;
   }
-  else if (file_size < (uint64_t)400 * SIZE_MEGA) {
+  else if (file_size < (uint64_t)4000 * SIZE_MEGA) {
     d->heads = 128;
   }
 

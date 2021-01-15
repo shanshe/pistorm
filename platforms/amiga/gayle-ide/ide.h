@@ -19,7 +19,7 @@
 #define		ide_lba_mid	4
 #define		ide_cyl_hi	5
 #define		ide_lba_hi	5
-#define		ide_dev_head	6
+#define		ide_dev_head 6
 #define		ide_lba_top	6
 #define		ide_status_r	7
 #define		ide_command_w	7
@@ -32,10 +32,6 @@ struct ide_taskfile {
   uint8_t error;
   uint8_t feature;
   uint8_t count;
-  uint8_t lba1;
-  uint8_t lba2;
-  uint8_t lba3;
-  uint8_t lba4;
   uint8_t status;
   uint8_t command;
   uint8_t devctrl;
@@ -63,6 +59,10 @@ struct ide_controller {
   int selected;
   const char *name;
   uint16_t data_latch;
+  uint8_t lba1;
+  uint8_t lba2;
+  uint8_t lba3;
+  uint8_t lba4;
 };
 
 //extern ide_controller idectrl;
