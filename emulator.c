@@ -421,6 +421,11 @@ unsigned int m68k_read_memory_8(unsigned int address) {
     }
   }
 
+  if(address&0xFF000000)
+  {
+	  printf("%s addres NOT mapped",__func__,address);
+	  return;
+  }
   address &=0xFFFFFF;
   return read8((uint32_t)address);
 }
@@ -452,6 +457,11 @@ unsigned int m68k_read_memory_16(unsigned int address) {
     }
   }
 
+  if(address&0xFF000000)
+  {
+	  printf("%s addres NOT mapped",__func__,address);
+	  return;
+  }
   address &=0xFFFFFF;
   if (address & 0x01) {
     return ((read8(address) << 8) | read8(address + 1));
@@ -462,6 +472,11 @@ unsigned int m68k_read_memory_16(unsigned int address) {
 unsigned int m68k_read_memory_32(unsigned int address) {
   PLATFORM_CHECK_READ(OP_TYPE_LONGWORD);
 
+  if(address&0xFF000000)
+  {
+	  printf("%s addres NOT mapped",__func__,address);
+	  return;
+  }
   address &=0xFFFFFF;
   if (address & 0x01) {
     uint32_t c = read8(address);
@@ -506,6 +521,11 @@ void m68k_write_memory_8(unsigned int address, unsigned int value) {
     }
   }
 
+  if(address&0xFF000000)
+  {
+	  printf("%s addres NOT mapped",__func__,address);
+	  return;
+  }
   address &=0xFFFFFF;
   write8((uint32_t)address, value);
   return;
@@ -514,6 +534,11 @@ void m68k_write_memory_8(unsigned int address, unsigned int value) {
 void m68k_write_memory_16(unsigned int address, unsigned int value) {
   PLATFORM_CHECK_WRITE(OP_TYPE_WORD);
 
+  if(address&0xFF000000)
+  {
+	  printf("%s addres NOT mapped",__func__,address);
+	  return;
+  }
   address &=0xFFFFFF;
   write16((uint32_t)address, value);
   return;
@@ -522,6 +547,11 @@ void m68k_write_memory_16(unsigned int address, unsigned int value) {
 void m68k_write_memory_32(unsigned int address, unsigned int value) {
   PLATFORM_CHECK_WRITE(OP_TYPE_LONGWORD);
 
+  if(address&0xFF000000)
+  {
+	  printf("%s addres NOT mapped",__func__,address);
+	  return;
+  }
   address &=0xFFFFFF;
   write16(address, value >> 16);
   write16(address + 2, value);
