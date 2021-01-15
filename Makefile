@@ -33,7 +33,7 @@ EXEPATH = ./
 
 CC        = gcc
 WARNINGS  = -Wall -Wextra -pedantic
-CFLAGS    = $(WARNINGS) -march=armv8-a -mfloat-abi=hard -mfpu=neon-fp-armv8 -O3 -g
+CFLAGS    = $(WARNINGS) -march=armv8-a -mfloat-abi=hard -mfpu=neon-fp-armv8 -O3
 LFLAGS    = $(WARNINGS) `sdl2-config --libs`
 
 TARGET = $(EXENAME)$(EXE)
