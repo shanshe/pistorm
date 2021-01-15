@@ -423,7 +423,7 @@ unsigned int m68k_read_memory_8(unsigned int address) {
 
   if(address&0xFF000000)
   {
-	  printf("%s address NOT mapped\n",__func__,address);
+	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
 	  return;
   }
   address &=0xFFFFFF;
@@ -459,7 +459,7 @@ unsigned int m68k_read_memory_16(unsigned int address) {
 
   if(address&0xFF000000)
   {
-	  printf("%s address NOT mapped\n",__func__,address);
+	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
 	  return;
   }
   address &=0xFFFFFF;
@@ -474,7 +474,7 @@ unsigned int m68k_read_memory_32(unsigned int address) {
 
   if(address&0xFF000000)
   {
-	  printf("%s address NOT mapped\n",__func__,address);
+	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
 	  return;
   }
   address &=0xFFFFFF;
@@ -523,7 +523,7 @@ void m68k_write_memory_8(unsigned int address, unsigned int value) {
 
   if(address&0xFF000000)
   {
-	  printf("%s address NOT mapped\n",__func__,address);
+	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
 	  return;
   }
   address &=0xFFFFFF;
@@ -536,7 +536,7 @@ void m68k_write_memory_16(unsigned int address, unsigned int value) {
 
   if(address&0xFF000000)
   {
-	  printf("%s address NOT mapped\n",__func__,address);
+	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
 	  return;
   }
   address &=0xFFFFFF;
@@ -549,7 +549,7 @@ void m68k_write_memory_32(unsigned int address, unsigned int value) {
 
   if(address&0xFF000000)
   {
-	  printf("%s address NOT mapped\n",__func__,address);
+	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
 	  return;
   }
   address &=0xFFFFFF;
