@@ -359,6 +359,11 @@ int cpu_irq_ack(int level) {
 static unsigned int target = 0;
 static uint8_t send_keypress = 0;
 
+uint8_t cdtv_dmac_reg_idx_read();
+void cdtv_dmac_reg_idx_write(uint8_t value);
+uint32_t cdtv_dmac_read(uint32_t address, uint8_t type);
+void cdtv_dmac_write(uint32_t address, uint32_t value, uint8_t type);
+
 #define PLATFORM_CHECK_READ(a) \
   if (address >= cfg->custom_low && address < cfg->custom_high) { \
     unsigned int target = 0; \
@@ -383,6 +388,15 @@ static uint8_t send_keypress = 0;
 
 unsigned int m68k_read_memory_8(unsigned int address) {
   PLATFORM_CHECK_READ(OP_TYPE_BYTE);
+
+  if (address >= 0xE90000 && address < 0xF00000) {
+    printf("BYTE read from DMAC @%.8X:", address);
+    uint32_t v = cdtv_dmac_read(address & 0xFFFF, OP_TYPE_BYTE);
+    printf("%.2X\n", v);
+    m68k_end_timeslice();
+    cpu_emulation_running = 0;
+    return v;
+  }
 
   if (mouse_hook_enabled) {
     if (address == CIAAPRA) {
@@ -421,17 +435,23 @@ unsigned int m68k_read_memory_8(unsigned int address) {
     }
   }
 
-  if(address&0xFF000000)
-  {
-	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
-	  return;
-  }
-  address &=0xFFFFFF;
+  if (address & 0xFF000000)
+    return 0;
+
   return read8((uint32_t)address);
 }
 
 unsigned int m68k_read_memory_16(unsigned int address) {
   PLATFORM_CHECK_READ(OP_TYPE_WORD);
+
+  if (address >= 0xE90000 && address < 0xF00000) {
+    printf("WORD read from DMAC @%.8X:", address);
+    uint32_t v = cdtv_dmac_read(address & 0xFFFF, OP_TYPE_WORD);
+    printf("%.2X\n", v);
+    m68k_end_timeslice();
+    cpu_emulation_running = 0;
+    return v;
+  }
 
   if (mouse_hook_enabled) {
     if (address == JOY0DAT) {
@@ -457,12 +477,9 @@ unsigned int m68k_read_memory_16(unsigned int address) {
     }
   }
 
-  if(address&0xFF000000)
-  {
-	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
-	  return;
-  }
-  address &=0xFFFFFF;
+  if (address & 0xFF000000)
+    return 0;
+
   if (address & 0x01) {
     return ((read8(address) << 8) | read8(address + 1));
   }
@@ -472,12 +489,18 @@ unsigned int m68k_read_memory_16(unsigned int address) {
 unsigned int m68k_read_memory_32(unsigned int address) {
   PLATFORM_CHECK_READ(OP_TYPE_LONGWORD);
 
-  if(address&0xFF000000)
-  {
-	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
-	  return;
+  if (address >= 0xE90000 && address < 0xF00000) {
+    printf("LONGWORD read from DMAC @%.8X:", address);
+    uint32_t v = cdtv_dmac_read(address & 0xFFFF, OP_TYPE_LONGWORD);
+    printf("%.2X\n", v);
+    m68k_end_timeslice();
+    cpu_emulation_running = 0;
+    return v;
   }
-  address &=0xFFFFFF;
+
+  if (address & 0xFF000000)
+    return 0;
+
   if (address & 0x01) {
     uint32_t c = read8(address);
     c |= (be16toh(read16(address+1)) << 8);
@@ -514,6 +537,14 @@ unsigned int m68k_read_memory_32(unsigned int address) {
 void m68k_write_memory_8(unsigned int address, unsigned int value) {
   PLATFORM_CHECK_WRITE(OP_TYPE_BYTE);
 
+  if (address >= 0xE90000 && address < 0xF00000) {
+    printf("BYTE write to DMAC @%.8X: %.2X\n", address, value);
+    cdtv_dmac_write(address & 0xFFFF, value, OP_TYPE_BYTE);
+    m68k_end_timeslice();
+    cpu_emulation_running = 0;
+    return;
+  }
+
   if (address == 0xbfe001) {
     if (ovl != (value & (1 << 0))) {
       ovl = (value & (1 << 0));
@@ -521,12 +552,9 @@ void m68k_write_memory_8(unsigned int address, unsigned int value) {
     }
   }
 
-  if(address&0xFF000000)
-  {
-	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
-	  return;
-  }
-  address &=0xFFFFFF;
+  if (address & 0xFF000000)
+    return;
+
   write8((uint32_t)address, value);
   return;
 }
@@ -534,12 +562,20 @@ void m68k_write_memory_8(unsigned int address, unsigned int value) {
 void m68k_write_memory_16(unsigned int address, unsigned int value) {
   PLATFORM_CHECK_WRITE(OP_TYPE_WORD);
 
-  if(address&0xFF000000)
-  {
-	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
-	  return;
+  if (address >= 0xE90000 && address < 0xF00000) {
+    printf("WORD write to DMAC @%.8X: %.4X\n", address, value);
+    cdtv_dmac_write(address & 0xFFFF, value, OP_TYPE_WORD);
+    m68k_end_timeslice();
+    cpu_emulation_running = 0;
+    return;
   }
-  address &=0xFFFFFF;
+
+  if (address & 0xFF000000)
+    return;
+
+  if (address & 0x01)
+    printf("Unaligned WORD write!\n");
+
   write16((uint32_t)address, value);
   return;
 }
@@ -547,12 +583,20 @@ void m68k_write_memory_16(unsigned int address, unsigned int value) {
 void m68k_write_memory_32(unsigned int address, unsigned int value) {
   PLATFORM_CHECK_WRITE(OP_TYPE_LONGWORD);
 
-  if(address&0xFF000000)
-  {
-	  printf("%s address 0x%08X NOT mapped\n",__func__,address);
-	  return;
+  if (address >= 0xE90000 && address < 0xF00000) {
+    printf("LONGWORD write to DMAC @%.8X: %.8X\n", address, value);
+    cdtv_dmac_write(address & 0xFFFF, value, OP_TYPE_LONGWORD);
+    m68k_end_timeslice();
+    cpu_emulation_running = 0;
+    return;
   }
-  address &=0xFFFFFF;
+
+  if (address & 0xFF000000)
+    return;
+
+  if (address & 0x01)
+    printf("Unaligned LONGWORD write!\n");
+
   write16(address, value >> 16);
   write16(address + 2, value);
   return;
