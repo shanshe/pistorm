@@ -677,7 +677,7 @@ extern jmp_buf m68ki_aerr_trap;
 /* Logging */
 #if M68K_LOG_ENABLE
 	#include <stdio.h>
-	extern FILE* M68K_LOG_FILEHANDLE
+	extern FILE* M68K_LOG_FILEHANDLE;
 	extern const char *const m68ki_cpu_names[];
 
 	#define M68K_DO_LOG(A) if(M68K_LOG_FILEHANDLE) fprintf A
