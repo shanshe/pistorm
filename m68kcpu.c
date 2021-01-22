@@ -922,6 +922,7 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			return;
 		case M68K_CPU_TYPE_68LC040:
 			CPU_TYPE         = CPU_TYPE_LC040;
+			CPU_ADDRESS_MASK = 0xffffffff;
 			m68ki_cpu.sr_mask          = 0xf71f; /* T1 T0 S  M  -- I2 I1 I0 -- -- -- X  N  Z  V  C  */
 			m68ki_cpu.cyc_instruction  = m68ki_cycles[4];
 			m68ki_cpu.cyc_exception    = m68ki_exception_cycle_table[4];
