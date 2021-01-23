@@ -43,7 +43,7 @@ char mouse_buttons = 0;
 
 extern volatile unsigned int *gpio;
 extern volatile uint16_t srdata;
-extern const char *cpu_types[M68K_CPU_TYPES];
+extern const char *cpu_types[];
 extern uint8_t realtime_graphics_debug;
 uint8_t realtime_disassembly;
 
