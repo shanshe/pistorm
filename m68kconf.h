@@ -180,7 +180,7 @@
  * M68K_LOG_FILEHANDLE must be #defined to a stdio file stream.
  * Turn on M68K_LOG_1010_1111 to log all 1010 and 1111 calls.
  */
-#define M68K_LOG_ENABLE             OPT_OFF
+#define M68K_LOG_ENABLE             OPT_ON
 #define M68K_LOG_1010_1111          OPT_OFF
 #define M68K_LOG_FILEHANDLE
 
