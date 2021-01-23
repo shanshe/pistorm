@@ -2064,7 +2064,7 @@ static inline void m68ki_exception_1010(void)
 	uint sr;
 #if M68K_LOG_1010_1111 == OPT_ON
 	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1010 instruction %04x (%s)\n",
-					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
+					 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
 					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 #endif
 
@@ -2083,7 +2083,7 @@ static inline void m68ki_exception_1111(void)
 
 #if M68K_LOG_1010_1111 == OPT_ON
 	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1111 instruction %04x (%s)\n",
-					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
+					 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
 					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 #endif
 
@@ -2105,7 +2105,7 @@ static inline void m68ki_exception_illegal(void)
 	uint sr;
 
 	M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: illegal instruction %04x (%s)\n",
-				 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
+				 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
 				 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 	if (m68ki_illg_callback(REG_IR))
 	    return;
@@ -2201,7 +2201,7 @@ static inline void m68ki_exception_interrupt(uint int_level)
 	else if(vector > 255)
 	{
 		M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: Interrupt acknowledge returned invalid vector $%x\n",
-				 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC), vector));
+				 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PC), vector));
 		return;
 	}
 
