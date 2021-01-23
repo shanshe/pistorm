@@ -144,9 +144,6 @@ typedef uint32 uint64;
 	}
 #endif /* UINT_MAX == 0xffffffff */
 
-extern unsigned int g_cpu_type;
-
-
 /* ======================================================================== */
 /* ============================ GENERAL DEFINES =========================== */
 /* ======================================================================== */
@@ -396,6 +393,7 @@ extern unsigned int g_cpu_type;
 #define CYC_SHIFT        m68ki_cpu.cyc_shift
 #define CYC_RESET        m68ki_cpu.cyc_reset
 #define HAS_PMMU         m68ki_cpu.has_pmmu
+#define HAS_FPU          m68ki_cpu.has_fpu
 #define PMMU_ENABLED     m68ki_cpu.pmmu_enabled
 #define RESET_CYCLES     m68ki_cpu.reset_cycles
 
@@ -974,7 +972,8 @@ typedef struct
 	uint sr_mask;      /* Implemented status register bits */
 	uint instr_mode;   /* Stores whether we are in instruction mode or group 0/1 exception mode */
 	uint run_mode;     /* Stores whether we are processing a reset, bus error, address error, or something else */
-	int    has_pmmu;     /* Indicates if a PMMU available (yes on 030, 040, no on EC030) */
+	int    has_pmmu;   /* Indicates if a PMMU available (yes on 030, 040, no on EC030) */
+	int    has_fpu;    /* Indicates if a FPU available */
 	int    pmmu_enabled; /* Indicates if the PMMU is enabled */
 	int    fpu_just_reset; /* Indicates the FPU was just reset */
 	uint reset_cycles;
@@ -2180,8 +2179,8 @@ static inline void m68ki_exception_1010(void)
 	uint sr;
 #if M68K_LOG_1010_1111 == OPT_ON
 	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1010 instruction %04x (%s)\n",
-					 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
-					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),g_cpu_type)));
+					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 #endif
 
 	sr = m68ki_init_exception();
@@ -2199,8 +2198,8 @@ static inline void m68ki_exception_1111(void)
 
 #if M68K_LOG_1010_1111 == OPT_ON
 	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1111 instruction %04x (%s)\n",
-					 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
-					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),g_cpu_type)));
+					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 #endif
 
 	sr = m68ki_init_exception();
@@ -2221,8 +2220,8 @@ static inline void m68ki_exception_illegal(void)
 	uint sr;
 
 	M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: illegal instruction %04x (%s)\n",
-				 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
-				 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),g_cpu_type)));
+				 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
+				 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 	if (m68ki_illg_callback(REG_IR))
 	    return;
 
@@ -2336,7 +2335,7 @@ static inline void m68ki_exception_interrupt(uint int_level)
 	else if(vector > 255)
 	{
 		M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: Interrupt acknowledge returned invalid vector $%x\n",
-				 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PC), vector));
+				 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC), vector));
 		return;
 	}
 

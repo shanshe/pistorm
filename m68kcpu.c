@@ -44,7 +44,6 @@ extern void m68851_mmu_ops();
 extern unsigned char m68ki_cycles[][0x10000];
 extern void (*m68ki_instruction_jump_table[0x10000])(void); /* opcode handler jump table */
 extern void m68ki_build_opcode_table(void);
-extern unsigned int g_cpu_type;
 
 #include "m68kops.h"
 #include "m68kcpu.h"
@@ -809,7 +808,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 3;
 			CYC_SHIFT        = 1;
 			CYC_RESET        = 132;
-			HAS_PMMU	 = 0;
+			HAS_PMMU         = 0;
+			HAS_FPU          = 0;
 			return;
 		case M68K_CPU_TYPE_SCC68070:
 			m68k_set_cpu_type(M68K_CPU_TYPE_68010);
@@ -831,7 +831,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 3;
 			CYC_SHIFT        = 1;
 			CYC_RESET        = 130;
-			HAS_PMMU	 = 0;
+			HAS_PMMU         = 0;
+			HAS_FPU          = 0;
 			return;
 		case M68K_CPU_TYPE_68EC020:
 			CPU_TYPE         = CPU_TYPE_EC020;
@@ -848,7 +849,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 2;
 			CYC_SHIFT        = 0;
 			CYC_RESET        = 518;
-			HAS_PMMU	 = 0;
+			HAS_PMMU         = 0;
+			HAS_FPU          = 0;
 			return;
 		case M68K_CPU_TYPE_68020:
 			CPU_TYPE         = CPU_TYPE_020;
@@ -865,7 +867,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 2;
 			CYC_SHIFT        = 0;
 			CYC_RESET        = 518;
-			HAS_PMMU	 = 0;
+			HAS_PMMU         = 0;
+			HAS_FPU          = 0;
 			return;
 		case M68K_CPU_TYPE_68030:
 			CPU_TYPE         = CPU_TYPE_030;
@@ -882,7 +885,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 2;
 			CYC_SHIFT        = 0;
 			CYC_RESET        = 518;
-			HAS_PMMU	       = 1;
+			HAS_PMMU         = 1;
+			HAS_FPU          = 1;
 			return;
 		case M68K_CPU_TYPE_68EC030:
 			CPU_TYPE         = CPU_TYPE_EC030;
@@ -899,7 +903,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 2;
 			CYC_SHIFT        = 0;
 			CYC_RESET        = 518;
-			HAS_PMMU	       = 0;		/* EC030 lacks the PMMU and is effectively a die-shrink 68020 */
+			HAS_PMMU         = 0;		/* EC030 lacks the PMMU and is effectively a die-shrink 68020 */
+			HAS_FPU          = 0;
 			return;
 		case M68K_CPU_TYPE_68040:		// TODO: these values are not correct
 			CPU_TYPE         = CPU_TYPE_040;
@@ -916,7 +921,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 2;
 			CYC_SHIFT        = 0;
 			CYC_RESET        = 518;
-			HAS_PMMU	 = 1;
+			HAS_PMMU         = 1;
+			HAS_FPU          = 1;
 			return;
 		case M68K_CPU_TYPE_68EC040: // Just a 68040 without pmmu apparently...
 			CPU_TYPE         = CPU_TYPE_EC040;
@@ -933,7 +939,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			CYC_MOVEM_L      = 2;
 			CYC_SHIFT        = 0;
 			CYC_RESET        = 518;
-			HAS_PMMU	 = 0;
+			HAS_PMMU         = 0;
+			HAS_FPU          = 0;
 			return;
 		case M68K_CPU_TYPE_68LC040:
 			CPU_TYPE         = CPU_TYPE_LC040;
@@ -950,7 +957,8 @@ void m68k_set_cpu_type(unsigned int cpu_type)
 			m68ki_cpu.cyc_movem_l      = 2;
 			m68ki_cpu.cyc_shift        = 0;
 			m68ki_cpu.cyc_reset        = 518;
-			HAS_PMMU	       = 1;
+			HAS_PMMU         = 1;
+			HAS_FPU          = 0;
 			return;
 	}
 }
@@ -1098,7 +1106,7 @@ void m68k_init(void)
 
 	/* The first call to this function initializes the opcode handler jump table */
 	if(!emulation_initialized)
-		{
+	{
 		m68ki_build_opcode_table();
 		emulation_initialized = 1;
 	}
@@ -1173,7 +1181,7 @@ void m68k_pulse_reset(void)
 	if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
 	{
 		// clear instruction cache
-//		m68ki_ic_clear(); FIXME
+		m68ki_ic_clear();
 	}
 
 
