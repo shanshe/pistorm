@@ -6855,7 +6855,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x806:				/* URP */
-				printf("0x806  URP movec CR"\n);
+				printf("0x806  URP movec CR\n");
 				if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					REG_DA[(word2 >> 12) & 15] = m68ki_cpu.mmu_urp_aptr;
@@ -6864,7 +6864,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x807:				/* SRP */
-				printf("0x807  SRP movec CR"\n);
+				printf("0x807  SRP movec CR\n");
 				if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					REG_DA[(word2 >> 12) & 15] = m68ki_cpu.mmu_srp_aptr;
@@ -7025,7 +7025,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x806:			/* URP */
-				printf("0x806  URP movec RC"\n);
+				printf("0x806  URP movec RC\n");
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					m68ki_cpu.mmu_urp_aptr = REG_DA[(word2 >> 12) & 15];
@@ -7034,7 +7034,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x807:			/* SRP */
-				printf("0x806  SRP movec RC"\n);
+				printf("0x806  SRP movec RC\n");
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					m68ki_cpu.mmu_srp_aptr = REG_DA[(word2 >> 12) & 15];
