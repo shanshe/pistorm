@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
   usleep(1500);
 
   m68k_init();
-  printf("Setting CPU type to %d.\n", cpu_type);
+  printf("Setting CPU type to %s.\n", cpu_types[cpu_type]);
   m68k_set_cpu_type(cpu_type);
   cpu_pulse_reset();
 

@@ -2255,7 +2255,9 @@ static inline void m68ki_exception_format_error(void)
 /* Exception for address error */
 static inline void m68ki_exception_address_error(void)
 {
-	uint sr = m68ki_init_exception();
+	m68ki_cpu.mmu_tmp_buserror_fc = m68ki_cpu.mmu_tmp_fc;
+	m68ki_cpu.mmu_tmp_buserror_rw = m68ki_cpu.mmu_tmp_rw;
+	m68ki_cpu.mmu_tmp_buserror_sz = m68ki_cpu.mmu_tmp_sz;
 
 	/* If we were processing a bus error, address error, or reset,
 	 * this is a catastrophic failure.
@@ -2263,10 +2265,12 @@ static inline void m68ki_exception_address_error(void)
 	 */
 	if(CPU_RUN_MODE == RUN_MODE_BERR_AERR_RESET_WSF)
 	{
-		m68k_read_memory_8(0x00ffff01);
+//		m68k_read_memory_8(0x00ffff01);
 		CPU_STOPPED = STOP_LEVEL_HALT;
 		return;
 	}
+
+	uint sr = m68ki_init_exception();
 
 	CPU_RUN_MODE = RUN_MODE_BERR_AERR_RESET_WSF;
 
@@ -2292,6 +2296,7 @@ static inline void m68ki_exception_address_error(void)
 	m68ki_stack_frame_buserr(sr);
 
 	m68ki_jump_vector(EXCEPTION_ADDRESS_ERROR);
+	m68ki_cpu.run_mode = RUN_MODE_BERR_AERR_RESET;
 
 	/* Use up some clock cycles. Note that we don't need to undo the
 	instruction's cycles here as we've longjmp:ed directly from the

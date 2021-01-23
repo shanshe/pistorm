@@ -1145,15 +1145,15 @@ void m68k_pulse_reset(void)
 	SET_CYCLES(0);
 
 	CPU_RUN_MODE = RUN_MODE_BERR_AERR_RESET;
-	CPU_INSTR_MODE = INSTRUCTION_YES;
+//	CPU_INSTR_MODE = INSTRUCTION_YES;
 
 	/* Turn off tracing */
 	FLAG_T1 = FLAG_T0 = 0;
 	m68ki_clear_trace();
 	/* Interrupt mask to level 7 */
 	FLAG_INT_MASK = 0x0700;
-	CPU_INT_LEVEL = 0;
-	m68ki_cpu.virq_state = 0;
+//	CPU_INT_LEVEL = 0;
+//	m68ki_cpu.virq_state = 0;
 	/* Reset VBR */
 	REG_VBR = 0;
 	/* Go to supervisor mode */
@@ -1167,9 +1167,9 @@ void m68k_pulse_reset(void)
 
 	/* Read the initial stack pointer and program counter */
 	m68ki_jump(0);
-	REG_SP = m68ki_read_imm_32();
-	REG_PC = m68ki_read_imm_32();
-	m68ki_jump(REG_PC);
+//	REG_SP = m68ki_read_imm_32();
+//	REG_PC = m68ki_read_imm_32();
+//	m68ki_jump(REG_PC);
 
 	CPU_RUN_MODE = RUN_MODE_NORMAL;
 

@@ -309,7 +309,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 				__func__, addr_in, *addr_out, m68ki_cpu.mmu_tmp_sr);
 		return 1;
 	}
-//	MMULOG("%s: lookup failed\n", __func__);
+	MMULOG("%s: lookup failed\n", __func__);
 	if (ptest)
 	{
 		m68ki_cpu.mmu_tmp_sr = M68K_MMU_SR_INVALID;
@@ -438,8 +438,8 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 		uint16 indirect = (!bitpos || !(bits >> bitpos)) && indexbits;
 		uint32 tbl_entry, tbl_entry2;
 
-//		MMULOG("%s: type %d, table %08x, addr_in %08x, indexbits %d, pageshift %d, indirect %d table_index %08x, rw=%d fc=%d\n",
-//				__func__, type, table, addr_in, indexbits, pageshift, indirect, table_index, rw, fc);
+		MMULOG("%s: type %d, table %08x, addr_in %08x, indexbits %d, pageshift %d, indirect %d table_index %08x, rw=%d fc=%d\n",
+				__func__, type, table, addr_in, indexbits, pageshift, indirect, table_index, rw, fc);
 
 		switch(type)
 		{
@@ -556,8 +556,8 @@ uint32 pmmu_translate_addr_with_fc(uint32 addr_in, uint8 fc, uint16 rw, int limi
 	uint32 addr_out = 0;
 
 
-//	MMULOG("%s: addr_in=%08x, fc=%d, ptest=%d, rw=%d, limit=%d\n",
-//			__func__, addr_in, fc, ptest, rw, limit);
+	MMULOG("%s: addr_in=%08x, fc=%d, ptest=%d, rw=%d, limit=%d\n",
+			__func__, addr_in, fc, ptest, rw, limit);
 	m68ki_cpu.mmu_tmp_sr = 0;
 
 	m68ki_cpu.mmu_last_logical_addr = addr_in;
@@ -1235,7 +1235,7 @@ void m68851_mmu_ops()
 		{
 			case 0:
 				modes = OPER_I_16();
-MMULOG("%s: modes=0x%08x\n", __func__, modes);
+
 				if ((modes & 0xfde0) == 0x2000)	// PLOAD
 				{
 					m68851_pload(ea, modes);
