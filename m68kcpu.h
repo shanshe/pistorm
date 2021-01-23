@@ -342,7 +342,7 @@ extern unsigned int g_cpu_type;
 #define CPU_TYPE         m68ki_cpu.cpu_type
 
 #define REG_DA           m68ki_cpu.dar /* easy access to data and address regs */
-#define REG_DA_SAVE           m68ki_cpu.dar_save
+#define REG_DA_SAVE      m68ki_cpu.dar_save
 #define REG_D            m68ki_cpu.dar
 #define REG_A            (m68ki_cpu.dar+8)
 #define REG_PPC          m68ki_cpu.ppc
@@ -395,21 +395,21 @@ extern unsigned int g_cpu_type;
 #define CYC_MOVEM_L      m68ki_cpu.cyc_movem_l
 #define CYC_SHIFT        m68ki_cpu.cyc_shift
 #define CYC_RESET        m68ki_cpu.cyc_reset
-#define HAS_PMMU	 m68ki_cpu.has_pmmu
-#define PMMU_ENABLED	 m68ki_cpu.pmmu_enabled
-#define RESET_CYCLES	 m68ki_cpu.reset_cycles
+#define HAS_PMMU         m68ki_cpu.has_pmmu
+#define PMMU_ENABLED     m68ki_cpu.pmmu_enabled
+#define RESET_CYCLES     m68ki_cpu.reset_cycles
 
 
-#define CALLBACK_INT_ACK     m68ki_cpu.int_ack_callback
-#define CALLBACK_BKPT_ACK    m68ki_cpu.bkpt_ack_callback
-#define CALLBACK_RESET_INSTR m68ki_cpu.reset_instr_callback
+#define CALLBACK_INT_ACK      m68ki_cpu.int_ack_callback
+#define CALLBACK_BKPT_ACK     m68ki_cpu.bkpt_ack_callback
+#define CALLBACK_RESET_INSTR  m68ki_cpu.reset_instr_callback
 #define CALLBACK_CMPILD_INSTR m68ki_cpu.cmpild_instr_callback
 #define CALLBACK_RTE_INSTR    m68ki_cpu.rte_instr_callback
 #define CALLBACK_TAS_INSTR    m68ki_cpu.tas_instr_callback
-#define CALLBACK_ILLG_INSTR    m68ki_cpu.illg_instr_callback
-#define CALLBACK_PC_CHANGED  m68ki_cpu.pc_changed_callback
-#define CALLBACK_SET_FC      m68ki_cpu.set_fc_callback
-#define CALLBACK_INSTR_HOOK  m68ki_cpu.instr_hook_callback
+#define CALLBACK_ILLG_INSTR   m68ki_cpu.illg_instr_callback
+#define CALLBACK_PC_CHANGED   m68ki_cpu.pc_changed_callback
+#define CALLBACK_SET_FC       m68ki_cpu.set_fc_callback
+#define CALLBACK_INSTR_HOOK   m68ki_cpu.instr_hook_callback
 
 
 
@@ -1072,7 +1072,7 @@ char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type);
 /* =========================== UTILITY FUNCTIONS ========================== */
 /* ======================================================================== */
 
-
+/*
 inline unsigned int m68k_read_pcrelative_8(unsigned int address)
 {
 	return ((m68k_read_immediate_16(address&~1)>>(8*(1-(address & 1))))&0xff);
@@ -1103,7 +1103,7 @@ inline unsigned int m68k_read_pcrelative_32(unsigned int address)
 			(m68k_read_immediate_16(address  ) << 16) |
 			(m68k_read_immediate_16(address+2)      );
 }
-
+*/
 /* ---------------------------- Read Immediate ---------------------------- */
 
 // clear the instruction cache
