@@ -3309,7 +3309,7 @@ M68KMAKE_OP(callm, 32, ., .)
 (void)ea;	/* just to avoid an 'unused variable' warning */
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_illegal();
@@ -4310,7 +4310,7 @@ M68KMAKE_OP(cpbcc, 32, ., .)
 	{
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_1111();
@@ -4323,7 +4323,7 @@ M68KMAKE_OP(cpdbcc, 32, ., .)
 	{
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_1111();
@@ -4336,7 +4336,7 @@ M68KMAKE_OP(cpgen, 32, ., .)
 	{
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_1111();
@@ -4349,7 +4349,7 @@ M68KMAKE_OP(cpscc, 32, ., .)
 	{
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_1111();
@@ -4362,7 +4362,7 @@ M68KMAKE_OP(cptrapcc, 32, ., .)
 	{
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
         // JFF: unsupported, but at least if the trap doesn't occur, app should still work, so at least PC increase is correct
         REG_PC += 4;  
 		return;
@@ -9317,7 +9317,7 @@ M68KMAKE_OP(rtm, 32, ., .)
 		m68ki_trace_t0();			   /* auto-disable (see m68kcpu.h) */
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE,"%s at %08x: called unimplemented instruction %04x (%s)\n",
 					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68k_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_illegal();
