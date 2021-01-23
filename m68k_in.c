@@ -6916,6 +6916,10 @@ M68KMAKE_OP(movec, 32, rc, .)
 					{
 						REG_CACR = REG_DA[(word2 >> 12) & 15] & 0x0f;
 					}
+
+					if (REG_CACR & (M68K_CACR_CI | M68K_CACR_CEI)) {
+//						m68ki_ic_clear();  //FIXME
+					}
 					return;
 				}
 				m68ki_exception_illegal();

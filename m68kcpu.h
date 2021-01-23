@@ -209,6 +209,12 @@ extern unsigned int g_cpu_type;
 #define RUN_MODE_NORMAL          0
 #define RUN_MODE_BERR_AERR_RESET 1
 
+#define M68K_CACR_IBE  0x10; // Instruction Burst Enable
+#define M68K_CACR_CI   0x08; // Clear Instruction Cache
+#define M68K_CACR_CEI  0x04; // Clear Entry in Instruction Cache
+#define M68K_CACR_FI   0x02; // Freeze Instruction Cache
+#define M68K_CACR_EI   0x01; // Enable Instruction Cache
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
