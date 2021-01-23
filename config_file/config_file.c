@@ -6,6 +6,7 @@
 #define M68K_CPU_TYPES M68K_CPU_TYPE_SCC68070
 
 const char *cpu_types[M68K_CPU_TYPES] = {
+  "INVALID",
   "68000",
   "68010",
   "68EC020",
