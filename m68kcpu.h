@@ -206,8 +206,9 @@ extern unsigned int g_cpu_type;
 #define MODE_READ       0x10
 #define MODE_WRITE      0
 
-#define RUN_MODE_NORMAL          0
-#define RUN_MODE_BERR_AERR_RESET 1
+#define RUN_MODE_NORMAL              0
+#define RUN_MODE_BERR_AERR_RESET_WSF 1 // writing the stack frame
+#define RUN_MODE_BERR_AERR_RESET     2 // stack frame done
 
 #define M68K_CACR_IBE  0x10 // Instruction Burst Enable
 #define M68K_CACR_CI   0x08 // Clear Instruction Cache
@@ -1837,8 +1838,12 @@ static inline void m68ki_stack_frame_1000(uint pc, uint sr, uint vector)
  * if the error happens at an instruction boundary.
  * PC stacked is address of next instruction.
  */
-static inline void m68ki_stack_frame_1010(uint sr, uint vector, uint pc)
+static inline void m68ki_stack_frame_1010(uint sr, uint vector, uint pc, uint fault_address)
 {
+	int orig_rw = m68ki_cpu.mmu_tmp_buserror_rw;    // this gets splatted by the following pushes, so save it now
+	int orig_fc = m68ki_cpu.mmu_tmp_buserror_fc;
+	int orig_sz = m68ki_cpu.mmu_tmp_buserror_sz;
+
 	/* INTERNAL REGISTER */
 	m68ki_push_16(0);
 
@@ -1855,7 +1860,7 @@ static inline void m68ki_stack_frame_1010(uint sr, uint vector, uint pc)
 	m68ki_push_16(0);
 
 	/* DATA CYCLE FAULT ADDRESS (2 words) */
-	m68ki_push_32(0);
+	m68ki_push_32(fault_address);
 
 	/* INSTRUCTION PIPE STAGE B */
 	m68ki_push_16(0);
@@ -1864,7 +1869,9 @@ static inline void m68ki_stack_frame_1010(uint sr, uint vector, uint pc)
 	m68ki_push_16(0);
 
 	/* SPECIAL STATUS REGISTER */
-	m68ki_push_16(0);
+	// set bit for: Rerun Faulted bus Cycle, or run pending prefetch
+	// set FC
+	m68ki_push_16(0x0100 | orig_fc | orig_rw<<6 | orig_sz<<4);
 
 	/* INTERNAL REGISTER */
 	m68ki_push_16(0);
@@ -1884,8 +1891,11 @@ static inline void m68ki_stack_frame_1010(uint sr, uint vector, uint pc)
  * if the error happens during instruction execution.
  * PC stacked is address of instruction in progress.
  */
-static inline void m68ki_stack_frame_1011(uint sr, uint vector, uint pc)
+static inline void m68ki_stack_frame_1011(uint sr, uint vector, uint pc, uint fault_address)
 {
+	int orig_rw = m68ki_cpu.mmu_tmp_buserror_rw;    // this gets splatted by the following pushes, so save it now
+	int orig_fc = m68ki_cpu.mmu_tmp_buserror_fc;
+	int orig_sz = m68ki_cpu.mmu_tmp_buserror_sz;
 	/* INTERNAL REGISTERS (18 words) */
 	m68ki_push_32(0);
 	m68ki_push_32(0);
@@ -1927,7 +1937,7 @@ static inline void m68ki_stack_frame_1011(uint sr, uint vector, uint pc)
 	m68ki_push_16(0);
 
 	/* DATA CYCLE FAULT ADDRESS (2 words) */
-	m68ki_push_32(0);
+	m68ki_push_32(fault_address);
 
 	/* INSTRUCTION PIPE STAGE B */
 	m68ki_push_16(0);
@@ -1936,7 +1946,7 @@ static inline void m68ki_stack_frame_1011(uint sr, uint vector, uint pc)
 	m68ki_push_16(0);
 
 	/* SPECIAL STATUS REGISTER */
-	m68ki_push_16(0);
+	m68ki_push_16(0x0100 | orig_fc | (orig_rw<<6) | (orig_sz<<4));
 
 	/* INTERNAL REGISTER */
 	m68ki_push_16(0);
@@ -1951,6 +1961,48 @@ static inline void m68ki_stack_frame_1011(uint sr, uint vector, uint pc)
 	m68ki_push_16(sr);
 }
 
+/* Type 7 stack frame (access fault).
+ * This is used by the 68040 for bus fault and mmu trap
+ * 30 words
+ */
+inline void m68ki_stack_frame_0111(uint sr, uint vector, uint pc, uint fault_address, uint8 in_mmu)
+{
+	int orig_rw = m68ki_cpu.mmu_tmp_buserror_rw;    // this gets splatted by the following pushes, so save it now
+	int orig_fc = m68ki_cpu.mmu_tmp_buserror_fc;
+
+	/* INTERNAL REGISTERS (18 words) */
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+	m68ki_push_32(0);
+
+	/* FAULT ADDRESS (2 words) */
+	m68ki_push_32(fault_address);
+
+	/* INTERNAL REGISTERS (3 words) */
+	m68ki_push_32(0);
+	m68ki_push_16(0);
+
+	/* SPECIAL STATUS REGISTER (1 word) */
+	m68ki_push_16((in_mmu ? 0x400 : 0) | orig_fc | (orig_rw<<8));
+
+	/* EFFECTIVE ADDRESS (2 words) */
+	m68ki_push_32(fault_address);
+
+	/* 0111, VECTOR OFFSET (1 word) */
+	m68ki_push_16(0x7000 | (vector<<2));
+
+	/* PROGRAM COUNTER (2 words) */
+	m68ki_push_32(pc);
+
+	/* STATUS REGISTER (1 word) */
+	m68ki_push_16(sr);
+}
 
 /* Used for Group 2 exceptions.
  * These stack a type 2 frame on the 020.
@@ -2152,14 +2204,33 @@ static inline void m68ki_exception_address_error(void)
 	 * this is a catastrophic failure.
 	 * Halt the CPU
 	 */
-	if(CPU_RUN_MODE == RUN_MODE_BERR_AERR_RESET)
+	if(CPU_RUN_MODE == RUN_MODE_BERR_AERR_RESET_WSF)
 	{
-m68k_read_memory_8(0x00ffff01);
+		m68k_read_memory_8(0x00ffff01);
 		CPU_STOPPED = STOP_LEVEL_HALT;
 		return;
 	}
-	CPU_RUN_MODE = RUN_MODE_BERR_AERR_RESET;
 
+	CPU_RUN_MODE = RUN_MODE_BERR_AERR_RESET_WSF;
+
+	if (CPU_TYPE_IS_000(CPU_TYPE))
+	{
+		/* Note: This is implemented for 68000 only! */
+		m68ki_stack_frame_buserr(sr);
+	}
+	else if (CPU_TYPE_IS_010(CPU_TYPE))
+	{
+		/* only the 68010 throws this unique type-1000 frame */
+		m68ki_stack_frame_1000(m68ki_cpu.ppc, sr, EXCEPTION_BUS_ERROR);
+	}
+	else if (m68ki_cpu.mmu_tmp_buserror_address == m68ki_cpu.ppc)
+	{
+		m68ki_stack_frame_1010(sr, EXCEPTION_BUS_ERROR, m68ki_cpu.ppc, m68ki_cpu.mmu_tmp_buserror_address);
+	}
+	else
+	{
+		m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, m68ki_cpu.ppc, m68ki_cpu.mmu_tmp_buserror_address);
+	}
 	/* Note: This is implemented for 68000 only! */
 	m68ki_stack_frame_buserr(sr);
 
