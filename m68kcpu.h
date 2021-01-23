@@ -895,9 +895,9 @@ extern jmp_buf m68ki_aerr_trap;
 /* ----------------------------- Read / Write ----------------------------- */
 
 /* Read from the current address space */
-#define m68ki_read_8(A)  m68ki_read_8_fc (A, FLAG_S | m68ki_get_address_space())
-#define m68ki_read_16(A) m68ki_read_16_fc(A, FLAG_S | m68ki_get_address_space())
-#define m68ki_read_32(A) m68ki_read_32_fc(A, FLAG_S | m68ki_get_address_space())
+#define m68ki_read_8(A)  m68ki_read_8_fc (A, FLAG_S | FUNCTION_CODE_USER_DATA)
+#define m68ki_read_16(A) m68ki_read_16_fc(A, FLAG_S | FUNCTION_CODE_USER_DATA)
+#define m68ki_read_32(A) m68ki_read_32_fc(A, FLAG_S | FUNCTION_CODE_USER_DATA)
 
 /* Write to the current data space */
 #define m68ki_write_8(A, V)  m68ki_write_8_fc (A, FLAG_S | FUNCTION_CODE_USER_DATA, V)
@@ -1073,9 +1073,103 @@ char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type);
 /* ======================================================================== */
 
 
+inline unsigned int m68k_read_pcrelative_8(unsigned int address)
+{
+	return ((m68k_read_immediate_16(address&~1)>>(8*(1-(address & 1))))&0xff);
+}
+
+inline unsigned int m68k_read_pcrelative_16(unsigned int address)
+{
+	if (!WORD_ALIGNED(address))
+		return
+			(m68k_read_immediate_16(address-1) << 8) |
+			(m68k_read_immediate_16(address+1) >> 8);
+
+	else
+		return
+			(m68k_read_immediate_16(address  )      );
+}
+
+inline unsigned int m68k_read_pcrelative_32(unsigned int address)
+{
+	if (!WORD_ALIGNED(address))
+		return
+			(m68k_read_immediate_16(address-1) << 24) |
+			(m68k_read_immediate_16(address+1) << 8)  |
+			(m68k_read_immediate_16(address+3) >> 8);
+
+	else
+		return
+			(m68k_read_immediate_16(address  ) << 16) |
+			(m68k_read_immediate_16(address+2)      );
+}
+
 /* ---------------------------- Read Immediate ---------------------------- */
 
+// clear the instruction cache
+inline void m68ki_ic_clear()
+{
+	int i;
+	for (i=0; i< M68K_IC_SIZE; i++) {
+		m68ki_cpu.ic_address[i] = ~0;
+	}
+}
+
 extern uint32 pmmu_translate_addr(uint32 addr_in, const uint16 rw);
+
+// read immediate word using the instruction cache
+
+inline uint32 m68ki_ic_readimm16(uint32 address)
+{
+	if (m68ki_cpu.cacr & M68K_CACR_EI)
+	{
+		// 68020 series I-cache (MC68020 User's Manual, Section 4 - On-Chip Cache Memory)
+		if (CPU_TYPE & (CPU_TYPE_EC020 | CPU_TYPE_020))
+		{
+			uint32 tag = (address >> 8) | (m68ki_cpu.s_flag ? 0x1000000 : 0);
+			int idx = (address >> 2) & 0x3f;    // 1-of-64 select
+
+			// do a cache fill if the line is invalid or the tags don't match
+			if ((!m68ki_cpu.ic_valid[idx]) || (m68ki_cpu.ic_address[idx] != tag))
+			{
+				// if the cache is frozen, don't update it
+				if (m68ki_cpu.cacr & M68K_CACR_FI)
+				{
+					return m68k_read_immediate_16(address);
+				}
+
+				uint32 data = m68ki_read_32(address & ~3);
+
+				//printf("m68k: doing cache fill at %08x (tag %08x idx %d)\n", address, tag, idx);
+
+				// if no buserror occurred, validate the tag
+				if (!m68ki_cpu.mmu_tmp_buserror_occurred)
+				{
+					m68ki_cpu.ic_address[idx] = tag;
+					m68ki_cpu.ic_data[idx] = data;
+					m68ki_cpu.ic_valid[idx] = true;
+				}
+				else
+				{
+					return m68k_read_immediate_16(address);
+				}
+			}
+
+			// at this point, the cache is guaranteed to be valid, either as
+			// a hit or because we just filled it.
+			if (address & 2)
+			{
+				return m68ki_cpu.ic_data[idx] & 0xffff;
+			}
+			else
+			{
+				return m68ki_cpu.ic_data[idx] >> 16;
+			}
+		}
+	}
+
+	return m68k_read_immediate_16(address);
+}
 
 /* Handles all immediate reads, does address error check, function code setting,
  * and prefetching if they are enabled in m68kconf.h
@@ -1147,16 +1241,16 @@ static inline uint m68ki_read_imm_32(void)
 	if(REG_PC != CPU_PREF_ADDR)
 	{
 		CPU_PREF_ADDR = REG_PC;
-		CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(CPU_PREF_ADDR));
+		CPU_PREF_DATA = m68ki_ic_readimm16(ADDRESS_68K(CPU_PREF_ADDR));
 	}
 	temp_val = MASK_OUT_ABOVE_16(CPU_PREF_DATA);
 	REG_PC += 2;
 	CPU_PREF_ADDR = REG_PC;
-	CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(CPU_PREF_ADDR));
+	CPU_PREF_DATA = m68ki_ic_readimm16(ADDRESS_68K(CPU_PREF_ADDR));
 
 	temp_val = MASK_OUT_ABOVE_32((temp_val << 16) | MASK_OUT_ABOVE_16(CPU_PREF_DATA));
 	REG_PC += 2;
-	CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(REG_PC));
+	CPU_PREF_DATA = m68ki_ic_readimm16(ADDRESS_68K(REG_PC));
 	CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
 
 	return temp_val;
@@ -1194,11 +1288,6 @@ static inline uint m68ki_read_8_fc(uint address, uint fc)
 	m68ki_cpu.mmu_tmp_rw = 1;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_BYTE;
 
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,1);
-#endif
-
 	for (int i = 0; i < read_ranges; i++) {
 		if(address >= read_addr[i] && address < read_upper[i]) {
 			return read_data[i][address - read_addr[i]];
@@ -1209,17 +1298,11 @@ static inline uint m68ki_read_8_fc(uint address, uint fc)
 }
 static inline uint m68ki_read_16_fc(uint address, uint fc)
 {
-	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
 	m68ki_cpu.mmu_tmp_fc = fc;
 	m68ki_cpu.mmu_tmp_rw = 1;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error_010_less(address, MODE_READ, fc); /* auto-disable (see m68kcpu.h) */
-
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,1);
-#endif
 
 	for (int i = 0; i < read_ranges; i++) {
 		if(address >= read_addr[i] && address < read_upper[i]) {
@@ -1231,17 +1314,11 @@ static inline uint m68ki_read_16_fc(uint address, uint fc)
 }
 static inline uint m68ki_read_32_fc(uint address, uint fc)
 {
-	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
 	m68ki_cpu.mmu_tmp_fc = fc;
 	m68ki_cpu.mmu_tmp_rw = 1;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error_010_less(address, MODE_READ, fc); /* auto-disable (see m68kcpu.h) */
-
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,1);
-#endif
 
 	for (int i = 0; i < read_ranges; i++) {
 		if(address >= read_addr[i] && address < read_upper[i]) {
@@ -1254,16 +1331,10 @@ static inline uint m68ki_read_32_fc(uint address, uint fc)
 
 static inline void m68ki_write_8_fc(uint address, uint fc, uint value)
 {
-	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
 	m68ki_cpu.mmu_tmp_fc = fc;
 	m68ki_cpu.mmu_tmp_rw = 0;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_BYTE;
-
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,0);
-#endif
 
 	for (int i = 0; i < write_ranges; i++) {
 		if(address >= write_addr[i] && address < write_upper[i]) {
@@ -1276,17 +1347,11 @@ static inline void m68ki_write_8_fc(uint address, uint fc, uint value)
 }
 static inline void m68ki_write_16_fc(uint address, uint fc, uint value)
 {
-	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
 	m68ki_cpu.mmu_tmp_fc = fc;
 	m68ki_cpu.mmu_tmp_rw = 0;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error_010_less(address, MODE_WRITE, fc); /* auto-disable (see m68kcpu.h) */
-
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,0);
-#endif
 
 	for (int i = 0; i < write_ranges; i++) {
 		if(address >= write_addr[i] && address < write_upper[i]) {
@@ -1299,17 +1364,11 @@ static inline void m68ki_write_16_fc(uint address, uint fc, uint value)
 }
 static inline void m68ki_write_32_fc(uint address, uint fc, uint value)
 {
-	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
 	m68ki_cpu.mmu_tmp_fc = fc;
 	m68ki_cpu.mmu_tmp_rw = 0;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error_010_less(address, MODE_WRITE, fc); /* auto-disable (see m68kcpu.h) */
-
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,0);
-#endif
 
 	for (int i = 0; i < write_ranges; i++) {
 		if(address >= write_addr[i] && address < write_upper[i]) {
@@ -1322,19 +1381,18 @@ static inline void m68ki_write_32_fc(uint address, uint fc, uint value)
 }
 
 #if M68K_SIMULATE_PD_WRITES
+/* Special call to simulate undocumented 68k behavior when move.l with a
+ * predecrement destination mode is executed.
+ * A real 68k first writes the high word to [address+2], and then writes the
+ * low word to [address].
+ */
 static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 {
-	(void)fc;
 	m68ki_set_fc(fc); /* auto-disable (see m68kcpu.h) */
 	m68ki_cpu.mmu_tmp_fc = fc;
 	m68ki_cpu.mmu_tmp_rw = 0;
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_LONG;
 	m68ki_check_address_error_010_less(address, MODE_WRITE, fc); /* auto-disable (see m68kcpu.h) */
-
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,0);
-#endif
 
 	m68k_write_memory_32_pd(ADDRESS_68K(address), value);
 }
@@ -1348,14 +1406,14 @@ static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 static inline uint m68ki_get_ea_pcdi(void)
 {
 	uint old_pc = REG_PC;
-	m68ki_use_program_space(); /* auto-disable */
+//	m68ki_use_program_space(); /* auto-disable */
 	return old_pc + MAKE_INT_16(m68ki_read_imm_16());
 }
 
 
 static inline uint m68ki_get_ea_pcix(void)
 {
-	m68ki_use_program_space(); /* auto-disable */
+//	m68ki_use_program_space(); /* auto-disable */
 	return m68ki_get_ea_ix(REG_PC);
 }
 
@@ -1585,14 +1643,14 @@ static inline void m68ki_fake_pull_32(void)
 static inline void m68ki_jump(uint new_pc)
 {
 	REG_PC = new_pc;
-	m68ki_pc_changed(REG_PC);
+//	m68ki_pc_changed(REG_PC);
 }
 
 static inline void m68ki_jump_vector(uint vector)
 {
 	REG_PC = (vector<<2) + REG_VBR;
 	REG_PC = m68ki_read_data_32(REG_PC);
-	m68ki_pc_changed(REG_PC);
+//	m68ki_pc_changed(REG_PC);
 }
 
 
@@ -1614,7 +1672,7 @@ static inline void m68ki_branch_16(uint offset)
 static inline void m68ki_branch_32(uint offset)
 {
 	REG_PC += offset;
-	m68ki_pc_changed(REG_PC);
+//	m68ki_pc_changed(REG_PC);
 }
 
 /* ---------------------------- Status Register --------------------------- */
@@ -1965,7 +2023,7 @@ static inline void m68ki_stack_frame_1011(uint sr, uint vector, uint pc, uint fa
  * This is used by the 68040 for bus fault and mmu trap
  * 30 words
  */
-inline void m68ki_stack_frame_0111(uint sr, uint vector, uint pc, uint fault_address, uint8 in_mmu)
+static inline void m68ki_stack_frame_0111(uint sr, uint vector, uint pc, uint fault_address, uint8 in_mmu)
 {
 	int orig_rw = m68ki_cpu.mmu_tmp_buserror_rw;    // this gets splatted by the following pushes, so save it now
 	int orig_fc = m68ki_cpu.mmu_tmp_buserror_fc;
