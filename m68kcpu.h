@@ -144,7 +144,7 @@ typedef uint32 uint64;
 	}
 #endif /* UINT_MAX == 0xffffffff */
 
-
+extern unsigned int g_cpu_type;
 
 
 /* ======================================================================== */
