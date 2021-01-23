@@ -63,15 +63,25 @@ uint m68ki_address_space;
 #ifdef M68K_LOG_ENABLE
 const char *const m68ki_cpu_names[] =
 {
-	"Invalid CPU",
-	"M68000",
-	"M68010",
-	"Invalid CPU",
-	"M68EC020"
-	"Invalid CPU",
-	"Invalid CPU",
-	"Invalid CPU",
-	"M68020"
+//	"Invalid CPU",
+//	"M68000",
+//	"M68010",
+//	"Invalid CPU",
+//	"M68EC020"
+//	"Invalid CPU",
+//	"Invalid CPU",
+//	"Invalid CPU",
+//	"M68020"
+  "68000",
+  "68010",
+  "68EC020",
+  "68020",
+  "68EC030",
+  "68030",
+  "68EC040",
+  "68LC040",
+  "68040",
+  "SCC68070",
 };
 #endif /* M68K_LOG_ENABLE */
 
