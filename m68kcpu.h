@@ -1119,7 +1119,7 @@ extern uint32 pmmu_translate_addr(uint32 addr_in, const uint16 rw);
 
 // read immediate word using the instruction cache
 
-inline uint32 m68ki_ic_readimm16(uint32 address)
+static inline uint32 m68ki_ic_readimm16(uint32 address)
 {
 	if (m68ki_cpu.cacr & M68K_CACR_EI)
 	{
