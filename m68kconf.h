@@ -182,7 +182,7 @@
  */
 #define M68K_LOG_ENABLE             OPT_ON
 #define M68K_LOG_1010_1111          OPT_OFF
-#define M68K_LOG_FILEHANDLE         stderr
+#define M68K_LOG_FILEHANDLE
 
 /* Emulate PMMU : if you enable this, there will be a test to see if the current chip has some enabled pmmu added to every memory access,
  * so enable this only if it's useful */
