@@ -6825,7 +6825,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 			case 0x005:				/* ITT1 */
 				if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					REG_DA[(word2 >> 12) & 15] = m68ki_cpu.mmu_itt1
+					REG_DA[(word2 >> 12) & 15] = m68ki_cpu.mmu_itt1;
 					return;
 				}
 				m68ki_exception_illegal();
