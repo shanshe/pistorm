@@ -2071,7 +2071,7 @@ static inline void m68ki_exception_1010(void)
 #if M68K_LOG_1010_1111 == OPT_ON
 	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1010 instruction %04x (%s)\n",
 					 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
-					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),g_cpu_type)));
 #endif
 
 	sr = m68ki_init_exception();
@@ -2090,7 +2090,7 @@ static inline void m68ki_exception_1111(void)
 #if M68K_LOG_1010_1111 == OPT_ON
 	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1111 instruction %04x (%s)\n",
 					 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
-					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),g_cpu_type)));
 #endif
 
 	sr = m68ki_init_exception();
@@ -2112,7 +2112,7 @@ static inline void m68ki_exception_illegal(void)
 
 	M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: illegal instruction %04x (%s)\n",
 				 m68ki_cpu_names[g_cpu_type], ADDRESS_68K(REG_PPC), REG_IR,
-				 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
+				 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),g_cpu_type)));
 	if (m68ki_illg_callback(REG_IR))
 	    return;
 
