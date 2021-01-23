@@ -6878,6 +6878,7 @@ printf("word2 %.8X",word2);
 		m68ki_exception_privilege_violation();
 		return;
 	}
+	printf("CPU_TYPE %.8X",CPU_TYPE);
 	m68ki_exception_illegal();
 }
 
