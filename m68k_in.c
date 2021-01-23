@@ -6759,7 +6759,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 		if(FLAG_S)
 		{
 			uint word2 = OPER_I_16();
-printf("word2 %.8X",word2);
+
 			m68ki_trace_t0();		   /* auto-disable (see m68kcpu.h) */
 			switch (word2 & 0xfff)
 			{
@@ -6878,7 +6878,6 @@ printf("word2 %.8X",word2);
 		m68ki_exception_privilege_violation();
 		return;
 	}
-	printf("CPU_TYPE %.8X",CPU_TYPE);
 	m68ki_exception_illegal();
 }
 
@@ -6890,7 +6889,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 		if(FLAG_S)
 		{
 			uint word2 = OPER_I_16();
-printf("word2 %.8X",word2);
+printf("word2 %.8X\n",word2);
 			m68ki_trace_t0();		   /* auto-disable (see m68kcpu.h) */
 			switch (word2 & 0xfff)
 			{
@@ -7047,6 +7046,7 @@ printf("word2 %.8X",word2);
 		m68ki_exception_privilege_violation();
 		return;
 	}
+	printf("CPU_TYPE %.8X",CPU_TYPE);
 	m68ki_exception_illegal();
 }
 
