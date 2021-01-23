@@ -6964,7 +6964,16 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x003:			/* TC */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_tc = REG_DA[(word2 >> 12) & 15];
+
+					if (m68ki_cpu.mmu_tc & 0x8000)
+					{
+						m68ki_cpu.pmmu_enabled = 1;
+					}
+					else
+					{
+						m68ki_cpu.pmmu_enabled = 0;
+					}
 					return;
 				}
 				m68ki_exception_illegal();
@@ -6972,7 +6981,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x004:			/* ITT0 */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_itt0 = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
@@ -6980,7 +6989,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x005:			/* ITT1 */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_itt1 = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
@@ -6988,7 +6997,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x006:			/* DTT0 */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_dtt0 = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
@@ -6996,7 +7005,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x007:			/* DTT1 */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_dtt1 = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
@@ -7004,7 +7013,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x805:			/* MMUSR */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_sr_040 = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
@@ -7012,7 +7021,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x806:			/* URP */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_urp_aptr = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
@@ -7020,7 +7029,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 			case 0x807:			/* SRP */
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
-					/* TODO */
+					m68ki_cpu.mmu_srp_aptr = REG_DA[(word2 >> 12) & 15];
 					return;
 				}
 				m68ki_exception_illegal();
