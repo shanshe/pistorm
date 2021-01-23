@@ -1147,7 +1147,7 @@ inline uint32 m68ki_ic_readimm16(uint32 address)
 				{
 					m68ki_cpu.ic_address[idx] = tag;
 					m68ki_cpu.ic_data[idx] = data;
-					m68ki_cpu.ic_valid[idx] = true;
+					m68ki_cpu.ic_valid[idx] = 1;
 				}
 				else
 				{
