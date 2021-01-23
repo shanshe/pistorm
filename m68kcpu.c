@@ -44,7 +44,7 @@ extern void m68851_mmu_ops();
 extern unsigned char m68ki_cycles[][0x10000];
 extern void (*m68ki_instruction_jump_table[0x10000])(void); /* opcode handler jump table */
 extern void m68ki_build_opcode_table(void);
-extern static unsigned int g_cpu_type;
+extern unsigned int g_cpu_type;
 
 #include "m68kops.h"
 #include "m68kcpu.h"
