@@ -17,6 +17,7 @@ MAINFILES        = emulator.c \
 	platforms/amiga/rtg/rtg.c \
 	platforms/amiga/rtg/rtg-output.c \
 	platforms/amiga/rtg/rtg-gfx.c \
+	platforms/amiga/piscsi/piscsi.c \
 	platforms/shared/rtc.c
 
 MUSASHIFILES     = m68kcpu.c m68kdasm.c softfloat/softfloat.c softfloat/fsincos.c softfloat/fyl2x.c
