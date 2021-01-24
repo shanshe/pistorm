@@ -62,7 +62,7 @@ unsigned int get_m68k_cpu_type(char *name) {
   for (int i = 0; i < M68K_CPU_TYPES; i++) {
     if (strcmp(name, cpu_types[i]) == 0) {
       printf("Set CPU type to %s.\n", cpu_types[i]);
-      return i + 1;
+      return i;
     }
   }
 
