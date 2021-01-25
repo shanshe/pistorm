@@ -312,8 +312,28 @@ void setvar_amiga(struct emulator_config *cfg, char *var, char *val) {
         piscsi_init();
         adjust_ranges_amiga(cfg);
     }
-    if (strcmp(var, "piscsi0") == 0) {
-        piscsi_map_drive(val, 0);
+    if (piscsi_enabled) {
+        if (strcmp(var, "piscsi0") == 0) {
+            piscsi_map_drive(val, 0);
+        }
+        if (strcmp(var, "piscsi1") == 0) {
+            piscsi_map_drive(val, 1);
+        }
+        if (strcmp(var, "piscsi2") == 0) {
+            piscsi_map_drive(val, 2);
+        }
+        if (strcmp(var, "piscsi3") == 0) {
+            piscsi_map_drive(val, 3);
+        }
+        if (strcmp(var, "piscsi4") == 0) {
+            piscsi_map_drive(val, 4);
+        }
+        if (strcmp(var, "piscsi5") == 0) {
+            piscsi_map_drive(val, 5);
+        }
+        if (strcmp(var, "piscsi6") == 0) {
+            piscsi_map_drive(val, 6);
+        }
     }
 
     // RTC stuff

@@ -53,6 +53,7 @@ void piscsi_map_drive(char *filename, uint8_t index) {
 
 void piscsi_unmap_drive(uint8_t index) {
     if (devs[index].fd != -1) {
+        printf("[PISCSI] Unmapped drive %d.\n", index);
         close (devs[index].fd);
         devs[index].fd = -1;
     }
@@ -73,7 +74,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             }
             printf("[PISCSI] %d byte READ from block %d to address %.8X\n", piscsi_u32[1], piscsi_u32[0], piscsi_u32[2]);
             r = get_mapped_item_by_address(cfg, piscsi_u32[2]);
-            if (r != -1) {
+            if (r != -1 && cfg->map_type[r] == MAPTYPE_RAM) {
                 printf("[PISCSI] \"DMA\" Read goes to mapped range %d.\n", r);
                 lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
                 read(d->fd, cfg->map_data[r] + piscsi_u32[2] - cfg->map_offset[r], piscsi_u32[1]);

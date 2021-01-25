@@ -7,7 +7,8 @@ uint32_t handle_piscsi_read(uint32_t addr, uint8_t type);
 void piscsi_block_op(uint8_t type, uint8_t num, uint32_t dest, uint32_t len);
 
 struct piscsi_dev {
-    uint16_t c, h, s;
+    uint32_t c;
+    uint16_t h, s;
     uint64_t fs;
     int32_t fd;
 };
