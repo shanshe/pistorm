@@ -148,15 +148,10 @@ uint32_t __UserDevOpen(struct IOExtTD *iotd, uint32_t num, uint32_t flags) {
     int io_err = IOERR_OPENFAIL;
 
     int unit_num = 0;
-    if (num != 0) {
-        if (num < 10) // Kludge for GiggleDisk
-            unit_num = num;
-        else
-            unit_num = num / 10;
-    }
+    WRITELONG(PISCSI_CMD_DRVNUM, num);
+    READLONG(PISCSI_CMD_DRVNUM, unit_num);
 
     KPrintF("Opening device %ld Flags: %ld (%lx)\n", unit_num, flags, flags);
-    WRITESHORT(PISCSI_CMD_DRVNUM, unit_num);
 
     if (iotd && unit_num < NUM_UNITS) {
         if (dev_base->units[unit_num].enabled && dev_base->units[unit_num].present) {
@@ -167,6 +162,7 @@ uint32_t __UserDevOpen(struct IOExtTD *iotd, uint32_t num, uint32_t flags) {
         }
     }
 
+skip:;
     iotd->iotd_Req.io_Error = io_err;
 
     return io_err;

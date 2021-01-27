@@ -25,6 +25,8 @@
 #include "platforms/amiga/rtg/rtg.h"
 #include "platforms/amiga/piscsi/piscsi.h"
 #include "platforms/amiga/piscsi/piscsi-enums.h"
+#include "platforms/amiga/net/pi-net.h"
+#include "platforms/amiga/net/pi-net-enums.h"
 #include "gpio/gpio.h"
 
 unsigned char read_ranges;
@@ -375,6 +377,9 @@ void cdtv_dmac_write(uint32_t address, uint32_t value, uint8_t type);
         if (address >= PISCSI_OFFSET && address < PISCSI_UPPER) { \
           return handle_piscsi_read(address, a); \
         } \
+        if (address >= PINET_OFFSET && address < PINET_UPPER) { \
+          return handle_pinet_read(address, a); \
+        } \
         if (address >= PIGFX_RTG_BASE && address < PIGFX_UPPER) { \
           return rtg_read((address & 0x0FFFFFFF), a); \
         } \
@@ -524,6 +529,9 @@ unsigned int m68k_read_memory_32(unsigned int address) {
       case PLATFORM_AMIGA: { \
         if (address >= PISCSI_OFFSET && address < PISCSI_UPPER) { \
           handle_piscsi_write(address, value, a); \
+        } \
+        if (address >= PINET_OFFSET && address < PINET_UPPER) { \
+          handle_pinet_write(address, value, a); \
         } \
         if (address >= PIGFX_RTG_BASE && address < PIGFX_UPPER) { \
           rtg_write((address & 0x0FFFFFFF), value, a); \

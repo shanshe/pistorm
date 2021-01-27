@@ -8,6 +8,8 @@
 #include "../shared/rtc.h"
 #include "piscsi/piscsi.h"
 #include "piscsi/piscsi-enums.h"
+#include "net/pi-net.h"
+#include "net/pi-net-enums.h"
 #include "rtg/rtg.h"
 
 int handle_register_read_amiga(unsigned int addr, unsigned char type, unsigned int *val);
@@ -38,7 +40,7 @@ extern unsigned char cdtv_sram[32 * SIZE_KILO];
 #define min(a, b) (a < b) ? a : b
 #define max(a, b) (a > b) ? a : b
 
-static uint8_t rtg_enabled = 0, piscsi_enabled = 0;
+static uint8_t rtg_enabled = 0, piscsi_enabled = 0, pinet_enabled = 0;
 
 inline int custom_read_amiga(struct emulator_config *cfg, unsigned int addr, unsigned int *val, unsigned char type) {
     if (!ac_z2_done && addr >= AC_Z2_BASE && addr < AC_Z2_BASE + AC_SIZE) {
@@ -156,6 +158,13 @@ void adjust_ranges_amiga(struct emulator_config *cfg) {
         else
             cfg->custom_low = min(cfg->custom_low, PISCSI_OFFSET);
         cfg->custom_high = max(cfg->custom_high, PISCSI_UPPER);
+    }
+    if (pinet_enabled) {
+        if (cfg->custom_low == 0)
+            cfg->custom_low = PINET_OFFSET;
+        else
+            cfg->custom_low = min(cfg->custom_low, PINET_OFFSET);
+        cfg->custom_high = max(cfg->custom_high, PINET_UPPER);
     }
 
     printf("Platform custom range: %.8X-%.8X\n", cfg->custom_low, cfg->custom_high);
@@ -334,6 +343,14 @@ void setvar_amiga(struct emulator_config *cfg, char *var, char *val) {
         if (strcmp(var, "piscsi6") == 0) {
             piscsi_map_drive(val, 6);
         }
+    }
+
+    // Pi-Net stuff
+    if (strcmp(var, "pi-net") == 0) {
+        printf("[AMIGA] PI-NET Interface Enabled.\n");
+        pinet_enabled = 1;
+        pinet_init(val);
+        adjust_ranges_amiga(cfg);
     }
 
     // RTC stuff

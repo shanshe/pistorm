@@ -85,7 +85,9 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
                 lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
                 for (int i = 0; i < piscsi_u32[1]; i++) {
                     read(d->fd, &c, 1);
+#ifndef FAKESTORM
                     write8(piscsi_u32[2] + i, (uint32_t)c);
+#endif
                 }
             }
             break;
@@ -106,7 +108,9 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
                 uint8_t c = 0;
                 lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
                 for (int i = 0; i < piscsi_u32[1]; i++) {
+#ifndef FAKESTORM
                     c = read8(piscsi_u32[2] + i);
+#endif
                     write(d->fd, &c, 1);
                 }
             }
@@ -128,8 +132,17 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             printf("[PISCSI] Write to ADDR4: %.8x\n", piscsi_u32[3]);
             break;
         case PISCSI_CMD_DRVNUM:
-            printf("[PISCSI] (%s) Drive number set to %d\n", op_type_names[type], val);
-            piscsi_cur_drive = val;
+            if (val != 0) {
+                if (val < 10) // Kludge for GiggleDisk
+                    piscsi_cur_drive = val;
+                else if (val >= 10 && val % 10 != 0)
+                    piscsi_cur_drive = 255;
+                else
+                    piscsi_cur_drive = val / 10;
+            }
+            else
+                piscsi_cur_drive = val;
+            printf("[PISCSI] (%s) Drive number set to %d (%d)\n", op_type_names[type], piscsi_cur_drive, val);
             break;
         default:
             printf("[PISCSI] Unhandled %s register write to %.8X: %d\n", op_type_names[type], addr, val);
@@ -148,6 +161,9 @@ uint32_t handle_piscsi_read(uint32_t addr, uint8_t type) {
             }
             printf("[PISCSI] %s Read from DRVTYPE %d, drive attached.\n", op_type_names[type], piscsi_cur_drive);
             return 1;
+            break;
+        case PISCSI_CMD_DRVNUM:
+            return piscsi_cur_drive;
             break;
         case PISCSI_CMD_CYLS:
             printf("[PISCSI] %s Read from CYLS %d: %d\n", op_type_names[type], piscsi_cur_drive, devs[piscsi_cur_drive].c);
