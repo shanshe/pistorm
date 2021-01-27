@@ -683,7 +683,7 @@ extern jmp_buf m68ki_aerr_trap;
 #if M68K_LOG_ENABLE
 	#include <stdio.h>
 //	extern FILE* M68K_LOG_FILEHANDLE;
-//	extern const char *const m68ki_cpu_names[];
+	extern const char *const m68ki_cpu_names[];
 
 	#define M68K_DO_LOG(A) do{printf("*************");printf A;}while(0) //if(M68K_LOG_FILEHANDLE) fprintf A
 	#if M68K_LOG_1010_1111
@@ -2178,8 +2178,8 @@ static inline void m68ki_exception_1010(void)
 {
 	uint sr;
 #if M68K_LOG_1010_1111 == OPT_ON
-	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "At %08x: called 1010 instruction %04x (%s)\n",
-					 ADDRESS_68K(REG_PPC), REG_IR,
+	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1010 instruction %04x (%s)\n",
+					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
 					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 #endif
 
@@ -2197,8 +2197,8 @@ static inline void m68ki_exception_1111(void)
 	uint sr;
 
 #if M68K_LOG_1010_1111 == OPT_ON
-	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "At %08x: called 1111 instruction %04x (%s)\n",
-					 ADDRESS_68K(REG_PPC), REG_IR,
+	M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: called 1111 instruction %04x (%s)\n",
+					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
 					 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 #endif
 
@@ -2219,8 +2219,8 @@ static inline void m68ki_exception_illegal(void)
 {
 	uint sr;
 
-	M68K_DO_LOG((M68K_LOG_FILEHANDLE "At %08x: illegal instruction %04x (%s)\n",
-				 ADDRESS_68K(REG_PPC), REG_IR,
+	M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: illegal instruction %04x (%s)\n",
+				 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PPC), REG_IR,
 				 m68ki_disassemble_quick(ADDRESS_68K(REG_PPC),CPU_TYPE)));
 	if (m68ki_illg_callback(REG_IR))
 	    return;
@@ -2339,8 +2339,8 @@ static inline void m68ki_exception_interrupt(uint int_level)
 		vector = EXCEPTION_SPURIOUS_INTERRUPT;
 	else if(vector > 255)
 	{
-		M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "At %08x: Interrupt acknowledge returned invalid vector $%x\n",
-				 ADDRESS_68K(REG_PC), vector));
+		M68K_DO_LOG_EMU((M68K_LOG_FILEHANDLE "%s at %08x: Interrupt acknowledge returned invalid vector $%x\n",
+				 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC), vector));
 		return;
 	}
 
