@@ -6,7 +6,6 @@
 #define M68K_CPU_TYPES M68K_CPU_TYPE_SCC68070
 
 const char *cpu_types[M68K_CPU_TYPES] = {
-  "INVALID",
   "68000",
   "68010",
   "68EC020",
@@ -62,7 +61,7 @@ unsigned int get_m68k_cpu_type(char *name) {
   for (int i = 0; i < M68K_CPU_TYPES; i++) {
     if (strcmp(name, cpu_types[i]) == 0) {
       printf("Set CPU type to %s.\n", cpu_types[i]);
-      return i;
+      return i + 1;
     }
   }
 

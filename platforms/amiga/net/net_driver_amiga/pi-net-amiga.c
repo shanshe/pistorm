@@ -34,13 +34,13 @@
 #define READSHORT(cmd, var) var = *(volatile unsigned short *)(PINET_OFFSET + cmd);
 #define READLONG(cmd, var) var = *(volatile unsigned long *)(PINET_OFFSET + cmd);
 
-typedef BOOL (*BMFunc)(void* a __asm("a0"), void* b __asm("a1"), long c __asm("d0"));
+//typedef BOOL (*BMFunc)(void* a __asm("a0"), void* b __asm("a1"), long c __asm("d0"));
 
 typedef struct BufferManagement
 {
   struct MinNode   bm_Node;
-  BMFunc           bm_CopyFromBuffer;
-  BMFunc           bm_CopyToBuffer;
+  BOOL           (*bm_CopyFromBuffer)(void* a __asm("a0"), void* b __asm("a1"), long c __asm("d0"));
+  BOOL           (*bm_CopyToBuffer)(void* a __asm("a0"), void* b __asm("a1"), long c __asm("d0"));
 } BufferManagement;
 
 #pragma pack(4)
@@ -70,7 +70,7 @@ struct WBStartup *_WBenchMsg = NULL;
 
 //#define exit(...)
 //#define debug(...)
-#define KPrintF(...)
+//#define KPrintF(...)
 
 uint32_t __UserDevInit(struct Device* dev) {
 	uint8_t *p;
@@ -84,9 +84,11 @@ uint32_t __UserDevInit(struct Device* dev) {
     dev_base = AllocMem(sizeof(struct pinet_base), MEMF_PUBLIC | MEMF_CLEAR);
     dev_base->pi_dev = dev;
 
+    KPrintF("Grabbing MAC.\n");
     for (int i = 0; i < 6; i++) {
         READBYTE((PINET_CMD_MAC + i), dev_base->MAC[i]);
     }
+    KPrintF("Grabbing IP.\n");
     for (int i = 0; i < 4; i++) {
         READBYTE((PINET_CMD_IP + i), dev_base->IP[i]);
     }
@@ -109,28 +111,34 @@ uint32_t __UserDevOpen(struct IORequest *io, uint32_t num, uint32_t flags) {
     dev_base->unit.unit_OpenCnt++;
 
     if (num == 0 && dev_base->unit.unit_OpenCnt == 1) {
-        if ((bm = (struct BufferManagement*)AllocVec(sizeof(struct BufferManagement), MEMF_CLEAR | MEMF_PUBLIC))) {
-            bm->bm_CopyToBuffer = (BMFunc)GetTagData(S2_CopyToBuff, 0, (struct TagItem *)ioreq->ios2_BufferManagement);
-            bm->bm_CopyFromBuffer = (BMFunc)GetTagData(S2_CopyFromBuff, 0, (struct TagItem *)ioreq->ios2_BufferManagement);
+        //KPrintF("Trying to alloc buffer management.\n");
+        //if ((bm = (struct BufferManagement*)AllocVec(sizeof(struct BufferManagement), MEMF_CLEAR | MEMF_PUBLIC))) {
+            //KPrintF("Setting up buffer copy funcs (1).\n");
+            //bm->bm_CopyToBuffer = (BOOL *)GetTagData(S2_CopyToBuff, 0, (struct TagItem *)ioreq->ios2_BufferManagement);
+            //KPrintF("Setting up buffer copy funcs (2).\n");
+            //bm->bm_CopyFromBuffer = (BOOL *)GetTagData(S2_CopyFromBuff, 0, (struct TagItem *)ioreq->ios2_BufferManagement);
 
-            ioreq->ios2_BufferManagement = (VOID *)bm;
+            KPrintF("Doing more things.\n");
+            ioreq->ios2_BufferManagement = NULL;//(VOID *)bm;
             ioreq->ios2_Req.io_Error = 0;
             ioreq->ios2_Req.io_Unit = (struct Unit *)&dev_base->unit;
             ioreq->ios2_Req.io_Device = (struct Device *)dev_base->pi_dev;
+
+            KPrintF("New list.\n");
 
             NewList(&dev_base->read_list);
             InitSemaphore(&dev_base->read_list_sem);
             
             ret = 0;
             ok = 1;
-        }
+        //}
     }
 
     if (ret == IOERR_OPENFAIL) {
-        KPrintF("Failed to open device. Already open?\n")
+        KPrintF("Failed to open device. Already open?\n");
     }
     else {
-        KPrintF("Device opened, yay.\n")
+        KPrintF("Device opened, yay.\n");
     }
     ioreq->ios2_Req.io_Message.mn_Node.ln_Type = NT_REPLYMSG;
 
@@ -143,13 +151,81 @@ uint32_t __UserDevClose(struct IORequest *io) {
   return 0;
 }
 
-void pinet_read_frame(struct IOSana2Req *ioreq) {
+uint32_t pinet_read_frame(struct IOSana2Req *ioreq) {
+    uint32_t datasize;
+    uint8_t *frame_ptr;
+    uint8_t broadcast;
+    uint32_t err = 0;
+    struct BufferManagement *bm;
 
+    /*uint8_t* frm = (uint8_t *)(PINET_OFFSET + PINET_CMD_FRAME);
+    uint32_t sz   = ((uint32_t)frm[0] << 8) | ((uint32_t)frm[1]);
+    uint32_t ser  = ((uint32_t)frm[2] << 8) | ((uint32_t)frm[3]);
+    uint16_t tp   = ((uint16_t)frm[16] << 8) | ((uint16_t)frm[17]);
+    
+    if (req->ios2_Req.io_Flags & SANA2IOF_RAW) {
+        frame_ptr = frm + 4;
+        datasize = sz;
+        req->ios2_Req.io_Flags = SANA2IOF_RAW;
+    }
+    else {
+        frame_ptr = frm + 4 + ETH_HDR_SIZE;
+        datasize = sz - ETH_HDR_SIZE;
+        req->ios2_Req.io_Flags = 0;
+    }
+
+    req->ios2_DataLength = datasize;
+
+    //D(("datasize: %lx\n",datasize));
+    //D(("frame_ptr: %lx\n",frame_ptr));
+    //D(("ios2_Data: %lx\n",req->ios2_Data));
+    //D(("bufmgmt: %lx\n",req->ios2_BufferManagement));
+
+    // copy frame to device user (probably tcp/ip system)
+    bm = (struct BufferManagement *)req->ios2_BufferManagement;
+    if (!(*bm->bm_CopyToBuffer)(req->ios2_Data, frame_ptr, datasize)) {
+        //D(("rx copybuf error\n"));
+        req->ios2_Req.io_Error = S2ERR_SOFTWARE;
+        req->ios2_WireError = S2WERR_BUFF_ERROR;
+        err = 1;
+    }
+    else {
+        req->ios2_Req.io_Error = req->ios2_WireError = 0;
+        err = 0;
+    }
+    
+    memcpy(req->ios2_SrcAddr, frame+4+6, HW_ADDRFIELDSIZE);
+    memcpy(req->ios2_DstAddr, frame+4, HW_ADDRFIELDSIZE);
+    
+    //D(("RXSZ %ld\n",(LONG)sz));
+    //D(("RXPT %ld\n",(LONG)tp));
+
+    //D(("RXSER %ld\n",(LONG)ser));
+    //D(("RXDST %lx...\n",*((ULONG*)(req->ios2_DstAddr))));
+    //D(("RXSRC %lx\n",*((ULONG*)(req->ios2_SrcAddr))));
+    //D(("RXSRC %lx\n",*((ULONG*)(frame_ptr))));
+
+    broadcast = TRUE;
+    for (int i=0; i<HW_ADDRFIELDSIZE; i++) {
+        if (frame[i+4] != 0xff) {
+        broadcast = FALSE;
+        break;
+        }
+    }
+    if (broadcast) {
+        req->ios2_Req.io_Flags |= SANA2IOF_BCAST;
+    }
+    
+    req->ios2_PacketType = tp;*/
+
+    return err;
 }
 
 void pinet_write_frame(struct IOSana2Req *ioreq) {
     
 }
+
+void exit(int status) { }
 
 ADDTABL_1(__BeginIO,a1);
 void __BeginIO(struct IORequest *io) {
@@ -165,17 +241,15 @@ void __BeginIO(struct IORequest *io) {
 
     switch( ioreq->ios2_Req.io_Command ) {
         case CMD_READ:
-            if (ioreq->ios2_BufferManagement == NULL) {
-                KPrintF("READ: BufferManagement is null.\n");
+            KPrintF("Read\n");
+            if (pinet_read_frame(ioreq) != 0) {
                 ioreq->ios2_Req.io_Error = S2ERR_BAD_ARGUMENT;
                 ioreq->ios2_WireError = S2WERR_BUFF_ERROR;
             }
-            else {
-                pinet_read_frame(ioreq);
-                ioreq = NULL;
-            }
+            ioreq = NULL;
             break;
         case S2_BROADCAST:
+            KPrintF("Broadcast\n");
             if (ioreq->ios2_DstAddr) {
                 for (int i = 0; i < ADDRFIELDSIZE; i++) {
                     ioreq->ios2_DstAddr[i] = 0xFF;
@@ -185,20 +259,14 @@ void __BeginIO(struct IORequest *io) {
             }
             /* Fallthrough */
         case CMD_WRITE: {
+            KPrintF("Write\n");
             pinet_write_frame(ioreq);
             break;
         }
 
         case S2_READORPHAN:
-            if( !ioreq->ios2_BufferManagement ) {
-                KPrintF("READORPHAN: BufferManagement is null.\n");
-                ioreq->ios2_Req.io_Error = S2ERR_BAD_ARGUMENT;
-                ioreq->ios2_WireError = S2WERR_BUFF_ERROR;
-            }
-            else {
-                ioreq->ios2_Req.io_Flags &= ~SANA2IOF_QUICK;
-                ioreq = NULL;
-            }
+            ioreq->ios2_Req.io_Flags &= ~SANA2IOF_QUICK;
+            ioreq = NULL;
             break;
         case S2_ONLINE:
         case S2_OFFLINE:

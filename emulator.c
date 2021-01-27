@@ -47,7 +47,6 @@ char mouse_buttons = 0;
 
 extern volatile unsigned int *gpio;
 extern volatile uint16_t srdata;
-extern const char *cpu_types[];
 extern uint8_t realtime_graphics_debug;
 uint8_t realtime_disassembly;
 
@@ -214,7 +213,7 @@ int main(int argc, char *argv[]) {
   usleep(1500);
 
   m68k_init();
-  printf("Setting CPU type to %s.\n", cpu_types[cpu_type]);
+  printf("Setting CPU type to %d.\n", cpu_type);
   m68k_set_cpu_type(cpu_type);
   cpu_pulse_reset();
 
@@ -247,6 +246,10 @@ disasm_run:;
     if (realtime_disassembly) {
       m68k_execute(1);
       m68k_disassemble(disasm_buf, m68k_get_reg(NULL, M68K_REG_PC), cpu_type);
+      /*printf("REGA: 0:$%.8X 1:$%.8X 2:$%.8X 3:$%.8X 4:$%.8X 5:$%.8X 6:$%.8X 7:$%.8X\n", m68k_get_reg(NULL, M68K_REG_A0), m68k_get_reg(NULL, M68K_REG_A1), m68k_get_reg(NULL, M68K_REG_A2), m68k_get_reg(NULL, M68K_REG_A3), \
+              m68k_get_reg(NULL, M68K_REG_A4), m68k_get_reg(NULL, M68K_REG_A5), m68k_get_reg(NULL, M68K_REG_A6), m68k_get_reg(NULL, M68K_REG_A7));
+      printf("REGD: 0:$%.8X 1:$%.8X 2:$%.8X 3:$%.8X 4:$%.8X 5:$%.8X 6:$%.8X 7:$%.8X\n", m68k_get_reg(NULL, M68K_REG_D0), m68k_get_reg(NULL, M68K_REG_D1), m68k_get_reg(NULL, M68K_REG_D2), m68k_get_reg(NULL, M68K_REG_D3), \
+              m68k_get_reg(NULL, M68K_REG_D4), m68k_get_reg(NULL, M68K_REG_D5), m68k_get_reg(NULL, M68K_REG_D6), m68k_get_reg(NULL, M68K_REG_D7));*/
       printf("%.8X (%.8X)]] %s\n", m68k_get_reg(NULL, M68K_REG_PC), (m68k_get_reg(NULL, M68K_REG_PC) & 0xFFFFFF), disasm_buf);
     }
     
