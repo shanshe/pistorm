@@ -557,8 +557,6 @@ cmpm      16  .     .     1011...101001...  ..........  U U U U U  12  12   9   
 cmpm      32  .     .     1011...110001...  ..........  U U U U U  20  20   9   9   9
 cinv      32  .     .     11110100..0.....  ..........  . . . . U   .   .   .   .  16  040 only
 cpush     32  .     .     11110100..1.....  ..........  . . . . U   .   .   .   .  16  040 only
-cpbcc     32  .     .     1111...01.......  ..........  . . U U .   .   .   4   4   .  unemulated
-cpdbcc    32  .     .     1111...001001...  ..........  . . U U .   .   .   4   4   .  unemulated
 cpgen     32  .     .     1111...000......  ..........  . . U U .   .   .   4   4   .  unemulated
 cpscc     32  .     .     1111...001......  ..........  . . U U .   .   .   4   4   .  unemulated
 cptrapcc  32  .     .     1111...001111...  ..........  . . U U .   .   .   4   4   .  unemulated
@@ -4341,32 +4339,6 @@ M68KMAKE_OP(cpush, 32, ., .)
 //		printf("At %08x: called unimplemented instruction %04x (%s)\n",
 //					 REG_PPC, REG_IR,
 //					 m68ki_disassemble_quick(REG_PPC,CPU_TYPE));
-		return;
-	}
-	m68ki_exception_1111();
-}
-
-
-M68KMAKE_OP(cpbcc, 32, ., .)
-{
-	if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
-	{
-		M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: called unimplemented instruction %04x (%s)\n",
-					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
-		return;
-	}
-	m68ki_exception_1111();
-}
-
-
-M68KMAKE_OP(cpdbcc, 32, ., .)
-{
-	if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
-	{
-		M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: called unimplemented instruction %04x (%s)\n",
-					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
-					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_1111();
