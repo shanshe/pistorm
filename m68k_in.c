@@ -6769,6 +6769,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 				REG_DA[(word2 >> 12) & 15] = REG_DFC;
 				return;
 			case 0x002:			   /* CACR */
+				printf("***********Reading CACR register\n");
 				if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
 				{
 					REG_DA[(word2 >> 12) & 15] = REG_CACR;
@@ -6901,6 +6902,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 				REG_DFC = REG_DA[(word2 >> 12) & 15] & 7;
 				return;
 			case 0x002:			   /* CACR */
+				printf("***********Writing CACR register\n");
 				/* Only EC020 and later have CACR */
 				if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
 				{
@@ -6919,7 +6921,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 					}
 
 					if (REG_CACR & (M68K_CACR_CI | M68K_CACR_CEI)) {
-//						m68ki_ic_clear();  //FIXME
+						m68ki_ic_clear();
 					}
 					return;
 				}
