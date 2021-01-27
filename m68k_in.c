@@ -555,6 +555,8 @@ cmpm       8  .     axy7  1011111100001111  ..........  U U U U U  12  12   9   
 cmpm       8  .     .     1011...100001...  ..........  U U U U U  12  12   9   9   9
 cmpm      16  .     .     1011...101001...  ..........  U U U U U  12  12   9   9   9
 cmpm      32  .     .     1011...110001...  ..........  U U U U U  20  20   9   9   9
+cinv      32  .     .     11110100..0.....  ..........  . . . . U   .   .   .   .  16  040 only
+cpush     32  .     .     11110100..1.....  ..........  . . . . U   .   .   .   .  16  040 only
 cpbcc     32  .     .     1111...01.......  ..........  . . U U .   .   .   4   4   .  unemulated
 cpdbcc    32  .     .     1111...001001...  ..........  . . U U .   .   .   4   4   .  unemulated
 cpgen     32  .     .     1111...000......  ..........  . . U U .   .   .   4   4   .  unemulated
@@ -10667,6 +10669,52 @@ M68KMAKE_OP(unpk, 16, mm, .)
 		return;
 	}
 	m68ki_exception_illegal();
+}
+
+
+M68KMAKE_OP(cinv, 32, ., .)
+{
+/*
+//	printf("cinv\n");
+	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+		uint16_t ir = REG_IR;
+		uint8_t cache = (ir >> 6) & 3;
+		uint8_t scope = (ir >> 3) & 3;
+//		printf("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", REG_PPC, ir, cache, scope, ir & 7);
+		switch (cache)
+		{
+			case 1:
+				// TODO: data cache
+				break;
+			case 2:
+			case 3:
+			// we invalidate/push the whole instruction cache
+//				m68ki_ic_clear();
+				break;
+		}
+		return;
+	}
+	m68ki_exception_1111();
+*/
+}
+
+
+M68KMAKE_OP(cpush, 32, ., .)
+{
+/*
+//	printf("cpush\n");
+	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+//		logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
+//						tag(), REG_PPC, REG_IR);
+//		printf("At %08x: called unimplemented instruction %04x (%s)\n",
+//					 REG_PPC, REG_IR,
+//					 m68ki_disassemble_quick(REG_PPC,CPU_TYPE));
+		return;
+	}
+	m68ki_exception_1111();
+*/
 }
 
 
