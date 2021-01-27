@@ -6911,7 +6911,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 					/* 68030 can write all bits except 5-7, 040 can write all */
 					if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 					{
-						REG_CACR = REG_DA[(word2 >> 12) & 15] & 0xfffe;  // Old I cache bit not working on 040
+						REG_CACR = REG_DA[(word2 >> 12) & 15] & 0xfffffffe;  // Old I cache bit not working on 040
 					}
 					else if (CPU_TYPE_IS_030_PLUS(CPU_TYPE))
 					{
