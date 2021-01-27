@@ -10674,6 +10674,7 @@ M68KMAKE_OP(unpk, 16, mm, .)
 
 M68KMAKE_OP(cinv, 32, ., .)
 {
+/*
 //	printf("cinv\n");
 	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 	{
@@ -10695,11 +10696,13 @@ M68KMAKE_OP(cinv, 32, ., .)
 		return;
 	}
 	m68ki_exception_1111();
+*/
 }
 
 
 M68KMAKE_OP(cpush, 32, ., .)
 {
+/*
 //	printf("cpush\n");
 	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 	{
@@ -10711,6 +10714,7 @@ M68KMAKE_OP(cpush, 32, ., .)
 		return;
 	}
 	m68ki_exception_1111();
+*/
 }
 
 
