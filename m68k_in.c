@@ -10670,6 +10670,42 @@ M68KMAKE_OP(unpk, 16, mm, .)
 }
 
 
+M68KMAKE_OP(cinv, 32, ., .)
+{
+	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+		uint16_t ir = m_ir;
+		uint8_t cache = (ir >> 6) & 3;
+//      uint8_t scope = (ir >> 3) & 3;
+//      logerror("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", m_ppc, ir, cache, scope, ir & 7);
+		switch (cache)
+		{
+			case 1:
+				// TODO: data cache
+				break;
+			case 2:
+			case 3:
+			// we invalidate/push the whole instruction cache
+				m68ki_ic_clear();
+				break;
+		}
+		return;
+	}
+	m68ki_exception_1111();
+}
+
+
+M68KMAKE_OP(cpush, 32, ., .)
+{
+	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+		logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
+						tag(), m_ppc, m_ir);
+		return;
+	}
+	m68ki_exception_1111();
+}
+
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 M68KMAKE_END
