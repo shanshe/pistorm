@@ -10676,7 +10676,7 @@ M68KMAKE_OP(cinv, 32, ., .)
 {
 	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 	{
-		uint16_t ir = m_ir;
+		uint16_t ir = REG_IR;
 		uint8_t cache = (ir >> 6) & 3;
 //      uint8_t scope = (ir >> 3) & 3;
 //      logerror("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", m_ppc, ir, cache, scope, ir & 7);
@@ -10701,8 +10701,11 @@ M68KMAKE_OP(cpush, 32, ., .)
 {
 	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 	{
-		logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
-						tag(), m_ppc, m_ir);
+//		logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
+//						tag(), REG_PPC, REG_IR);
+		M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: called unimplemented instruction %04x (%s)\n",
+					 m68ki_cpu_names[CPU_TYPE], ADDRESS_68K(REG_PC - 2), REG_IR,
+					 m68ki_disassemble_quick(ADDRESS_68K(REG_PC - 2),CPU_TYPE)));
 		return;
 	}
 	m68ki_exception_1111();
