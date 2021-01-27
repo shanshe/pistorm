@@ -6831,6 +6831,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x006:				/* DTT0 */
+				printf("***********Reading DTT0 0x%.8X\n",m68ki_cpu.mmu_dtt0);
 				if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					REG_DA[(word2 >> 12) & 15] = m68ki_cpu.mmu_dtt0;
@@ -6839,6 +6840,7 @@ M68KMAKE_OP(movec, 32, cr, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x007:				/* DTT1 */
+				printf("***********Reading DTT1 0x%.8X\n",m68ki_cpu.mmu_dtt1);
 				if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					REG_DA[(word2 >> 12) & 15] = m68ki_cpu.mmu_dtt1;
@@ -7002,6 +7004,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x006:			/* DTT0 */
+				printf("***********Writing DTT0 0x%.8X\n",REG_DA[(word2 >> 12) & 15]);
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					m68ki_cpu.mmu_dtt0 = REG_DA[(word2 >> 12) & 15];
@@ -7010,6 +7013,7 @@ M68KMAKE_OP(movec, 32, rc, .)
 				m68ki_exception_illegal();
 				return;
 			case 0x007:			/* DTT1 */
+				printf("***********Writing DTT1 0x%.8X\n",REG_DA[(word2 >> 12) & 15]);
 				if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 				{
 					m68ki_cpu.mmu_dtt1 = REG_DA[(word2 >> 12) & 15];
