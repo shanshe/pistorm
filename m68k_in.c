@@ -10674,13 +10674,13 @@ M68KMAKE_OP(unpk, 16, mm, .)
 
 M68KMAKE_OP(cinv, 32, ., .)
 {
-	printf("cinv\n");
+//	printf("cinv\n");
 	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 	{
 		uint16_t ir = REG_IR;
 		uint8_t cache = (ir >> 6) & 3;
 		uint8_t scope = (ir >> 3) & 3;
-		printf("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", REG_PPC, ir, cache, scope, ir & 7);
+//		printf("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", REG_PPC, ir, cache, scope, ir & 7);
 		switch (cache)
 		{
 			case 1:
@@ -10689,7 +10689,7 @@ M68KMAKE_OP(cinv, 32, ., .)
 			case 2:
 			case 3:
 			// we invalidate/push the whole instruction cache
-				m68ki_ic_clear();
+//				m68ki_ic_clear();
 				break;
 		}
 		return;
@@ -10700,14 +10700,14 @@ M68KMAKE_OP(cinv, 32, ., .)
 
 M68KMAKE_OP(cpush, 32, ., .)
 {
-	printf("cpush\n");
+//	printf("cpush\n");
 	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
 	{
 //		logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
 //						tag(), REG_PPC, REG_IR);
-		printf("At %08x: called unimplemented instruction %04x (%s)\n",
-					 REG_PPC, REG_IR,
-					 m68ki_disassemble_quick(REG_PPC,CPU_TYPE));
+//		printf("At %08x: called unimplemented instruction %04x (%s)\n",
+//					 REG_PPC, REG_IR,
+//					 m68ki_disassemble_quick(REG_PPC,CPU_TYPE));
 		return;
 	}
 	m68ki_exception_1111();
