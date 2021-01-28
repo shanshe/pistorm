@@ -696,8 +696,6 @@ extern jmp_buf m68ki_aerr_trap;
 	#define M68K_DO_LOG_EMU(A)
 #endif
 
-extern uint8_t realtime_disassembly;
-
 
 /* -------------------------- EA / Operand Access ------------------------- */
 
