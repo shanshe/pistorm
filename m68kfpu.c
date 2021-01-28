@@ -2128,8 +2128,10 @@ void m68040_fpu_op1()
 					break;
 
 				case 4: // -(An)
+					printf("A7 prev=0x%.8X\n",REG_A[7]);
 					addr = EA_AY_PD_32();
 					m68040_do_fsave(addr, reg, 0);
+					printf("A7 post=0x%.8X\n",REG_A[7]);
 					break;
 				case 5: // (D16, An)
 					addr = EA_AY_DI_16();
