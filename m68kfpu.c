@@ -1959,7 +1959,7 @@ static int perform_fsave(uint32 addr, int inc)
 		}
 		else
 		{
-			m68ki_write_32(addr-4, 0x41000000);
+			m68ki_write_32(addr, 0x41000000);
 			return -4;
 		}
 	}
