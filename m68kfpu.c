@@ -2128,6 +2128,7 @@ void m68040_fpu_op1()
 
 		case 1:		// FRESTORE <ea>
 		{
+			printf("fresotre mode=%d\n",mode);
 			switch (mode)
 			{
 			case 2: // (An)
