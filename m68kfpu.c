@@ -1959,7 +1959,7 @@ static int perform_fsave(uint32 addr, int inc)
 		}
 		else
 		{
-			m68ki_write_32(addr, 0x41000000);
+			m68ki_write_32(addr-4, 0x41000000);
 			return -4;
 		}
 	}
@@ -1978,13 +1978,13 @@ static int perform_fsave(uint32 addr, int inc)
 	}
 	else
 	{
-		m68ki_write_32(addr, 0x70000000);
-		m68ki_write_32(addr-4, 0);
+		m68ki_write_32(addr-4, 0x70000000);
 		m68ki_write_32(addr-8, 0);
 		m68ki_write_32(addr-12, 0);
 		m68ki_write_32(addr-16, 0);
 		m68ki_write_32(addr-20, 0);
-		m68ki_write_32(addr-24, 0x1f180000);
+		m68ki_write_32(addr-24, 0);
+		m68ki_write_32(addr-28, 0x1f180000);
 		return -7*4;
 	}
 }
