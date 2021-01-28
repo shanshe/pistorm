@@ -48,7 +48,7 @@ char mouse_buttons = 0;
 extern volatile unsigned int *gpio;
 extern volatile uint16_t srdata;
 extern uint8_t realtime_graphics_debug;
-uint8_t realtime_disassembly;
+uint8_t realtime_disassembly,catch_disassembly_cacr=0;
 
 char disasm_buf[4096];
 

@@ -6906,7 +6906,8 @@ M68KMAKE_OP(movec, 32, rc, .)
 				REG_DFC = REG_DA[(word2 >> 12) & 15] & 7;
 				return;
 			case 0x002:			   /* CACR */
-				realtime_disassembly=1;
+				if(catch_disassembly_cacr)
+					realtime_disassembly=1;
 
 				printf("***********Writing CACR 0x%.8X\n",REG_DA[(word2 >> 12) & 15]);
 				/* Only EC020 and later have CACR */
