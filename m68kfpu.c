@@ -2071,6 +2071,7 @@ void m68040_fpu_op1()
 
 	switch ((REG_IR >> 6) & 0x3)
 	{
+		printf("fsave mode=%d\n",mode);
 		case 0:		// FSAVE <ea>
 		{
 			switch (mode)
