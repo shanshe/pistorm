@@ -602,7 +602,7 @@ uint32 pmmu_translate_addr_with_fc(uint32 addr_in, uint8 fc, uint16 rw, int limi
 
 	if (!pmmu_walk_tables(addr_in, type, tbl_addr, fc, limit, rw, &addr_out, ptest))
 	{
-		printf("%s: addr_in=%08x, type=%x, tbl_addr=%x, fc=%d, limit=%x, rw=%x, addr_out=%x, ptest=%d\n",
+		MMULOG("%s: addr_in=%08x, type=%x, tbl_addr=%x, fc=%d, limit=%x, rw=%x, addr_out=%x, ptest=%d\n",
 				__func__, addr_in, type, tbl_addr, fc, limit, rw, addr_out, ptest);
 		fatalerror("Table walk did not resolve\n");
 	}
