@@ -2034,7 +2034,7 @@ static int perform_fsave(uint32 addr, int inc)
 static void do_frestore_null(void)
 {
 	int i;
-	printf("do_frestore_null\n");
+//	printf("do_frestore_null\n");
 	REG_FPCR = 0;
 	REG_FPSR = 0;
 	REG_FPIAR = 0;
@@ -2069,10 +2069,10 @@ void m68040_do_frestore(uint32 addr, int reg)
 	uint8 m40 = m68ki_cpu.cpu_type & CPU_TYPE_040;
 	uint32 temp = m68ki_read_32(addr);
 
-	printf("do_restore temp=0x%.8X, reg=%d\n",temp,reg);
 	// check for nullptr frame
 	if (temp & 0xff000000)
 	{
+//		printf("do_restore temp=0x%.8X, reg=%d\n",temp,reg);
 		// we don't handle non-nullptr frames
 		m68ki_cpu.fpu_just_reset = 0;
 
@@ -2114,7 +2114,7 @@ void m68040_fpu_op1()
 	{
 		case 0:		// FSAVE <ea>
 		{
-			printf("fsave mode=%d\n",mode);
+//			printf("fsave mode=%d\n",mode);
 			switch (mode)
 			{
 				case 2: // (An)
@@ -2124,14 +2124,14 @@ void m68040_fpu_op1()
 
 				case 3:	// (An)+
 					addr = EA_AY_PI_32();
-					m68040_do_fsave(addr, reg, 1);
+					m68040_do_fsave(addr, -1, 1); // -1 was reg
 					break;
 
 				case 4: // -(An)
-					printf("A7 prev=0x%.8X\n",REG_A[7]);
+//					printf("A7 prev=0x%.8X\n",REG_A[7]);
 					addr = EA_AY_PD_32();
-					m68040_do_fsave(addr, -1, 0);
-					printf("A7 post=0x%.8X\n",REG_A[7]);
+					m68040_do_fsave(addr, -1, 0);  // -1 was reg
+//					printf("A7 post=0x%.8X\n",REG_A[7]);
 					break;
 				case 5: // (D16, An)
 					addr = EA_AY_DI_16();
@@ -2173,7 +2173,7 @@ void m68040_fpu_op1()
 
 		case 1:		// FRESTORE <ea>
 		{
-			printf("frestore mode=%d\n",mode);
+//			printf("frestore mode=%d\n",mode);
 			switch (mode)
 			{
 				case 2: // (An)
