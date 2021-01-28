@@ -377,6 +377,16 @@ static uint8 READ_EA_8(int ea)
 			uint32 ea = REG_A[reg];
 			return m68ki_read_8(ea);
 		}
+		case 3:     // (An)+
+		{
+			uint32 ea = EA_AY_PI_8();
+			return m68ki_read_8(ea);
+		}
+		case 4:     // -(An)
+		{
+			uint32 ea = EA_AY_PD_8();
+			return m68ki_read_8(ea);
+		}
 		case 5:		// (d16, An)
 		{
 			uint32 ea = EA_AY_DI_8();
@@ -401,6 +411,16 @@ static uint8 READ_EA_8(int ea)
 					uint32 d1 = OPER_I_16();
 					uint32 d2 = OPER_I_16();
 					uint32 ea = (d1 << 16) | d2;
+					return m68ki_read_8(ea);
+				}
+				case 2:     // (d16, PC)
+				{
+					uint32 ea = EA_PCDI_8();
+					return m68ki_read_8(ea);
+				}
+				case 3:     // (PC) + (Xn) + d8
+				{
+					uint32 ea =  EA_PCIX_8();
 					return m68ki_read_8(ea);
 				}
 				case 4:		// #<data>
@@ -433,6 +453,16 @@ static uint16 READ_EA_16(int ea)
 			uint32 ea = REG_A[reg];
 			return m68ki_read_16(ea);
 		}
+		case 3:     // (An)+
+		{
+			uint32 ea = EA_AY_PI_16();
+			return m68ki_read_16(ea);
+		}
+		case 4:     // -(An)
+		{
+			uint32 ea = EA_AY_PD_16();
+			return m68ki_read_16(ea);
+		}
 		case 5:		// (d16, An)
 		{
 			uint32 ea = EA_AY_DI_16();
@@ -457,6 +487,16 @@ static uint16 READ_EA_16(int ea)
 					uint32 d1 = OPER_I_16();
 					uint32 d2 = OPER_I_16();
 					uint32 ea = (d1 << 16) | d2;
+					return m68ki_read_16(ea);
+				}
+				case 2:     // (d16, PC)
+				{
+					uint32 ea = EA_PCDI_16();
+					return m68ki_read_16(ea);
+				}
+				case 3:     // (PC) + (Xn) + d8
+				{
+					uint32 ea =  EA_PCIX_16();
 					return m68ki_read_16(ea);
 				}
 				case 4:		// #<data>
@@ -706,7 +746,8 @@ static floatx80 READ_EA_FPE(uint32 ea)
 						fpr = load_extended_float80(ea);
 					}
 					break;
-	      		case 4: // immediate (JFF)
+
+				case 4: // immediate (JFF)
 				{
 				  uint32 ea = REG_PC;
 				  fpr = load_extended_float80(ea);
@@ -1349,7 +1390,7 @@ static void fpgen_rm_reg(uint16 w2)
 		case 0x00:		// FMOVE
 		{
 			REG_FP[dst] = source;
-		    SET_CONDITION_CODES(REG_FP[dst]);
+			SET_CONDITION_CODES(REG_FP[dst]);
 			USE_CYCLES(4);
 			break;
 		}
