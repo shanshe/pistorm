@@ -134,6 +134,7 @@ M68KMAKE_TABLE_HEADER
 #include "m68kops.h"
 
 #define NUM_CPU_TYPES 5
+extern uint8_t realtime_disassembly;
 
 void  (*m68ki_instruction_jump_table[0x10000])(void); /* opcode handler jump table */
 unsigned char m68ki_cycles[NUM_CPU_TYPES][0x10000]; /* Cycles used by CPU type */
@@ -6904,6 +6905,8 @@ M68KMAKE_OP(movec, 32, rc, .)
 				REG_DFC = REG_DA[(word2 >> 12) & 15] & 7;
 				return;
 			case 0x002:			   /* CACR */
+				realtime_disassembly=1;
+
 				printf("***********Writing CACR 0x%.8X\n",REG_DA[(word2 >> 12) & 15]);
 				/* Only EC020 and later have CACR */
 				if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
