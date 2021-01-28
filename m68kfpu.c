@@ -2069,11 +2069,12 @@ void m68040_fpu_op1()
 	int reg = (ea & 0x7);
 	uint32 addr;
 
+	printf("m68040_fpu_op1 REG_IR=0x%.8X\n",REG_IR);
 	switch ((REG_IR >> 6) & 0x3)
 	{
-		printf("fsave mode=%d\n",mode);
 		case 0:		// FSAVE <ea>
 		{
+			printf("fsave mode=%d\n",mode);
 			switch (mode)
 			{
 				case 2: // (An)
@@ -2130,7 +2131,7 @@ void m68040_fpu_op1()
 
 		case 1:		// FRESTORE <ea>
 		{
-			printf("fresotre mode=%d\n",mode);
+			printf("frestore mode=%d\n",mode);
 			switch (mode)
 			{
 				case 2: // (An)
