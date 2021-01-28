@@ -1993,7 +1993,7 @@ static int perform_fsave(uint32 addr, int inc)
 static void do_frestore_null(void)
 {
 	int i;
-
+	printf("do_frestore_null\n");
 	REG_FPCR = 0;
 	REG_FPSR = 0;
 	REG_FPIAR = 0;
@@ -2075,55 +2075,55 @@ void m68040_fpu_op1()
 		{
 			switch (mode)
 			{
-			case 2: // (An)
-				addr = REG_A[reg];
-				m68040_do_fsave(addr, -1, 1);
-				break;
+				case 2: // (An)
+					addr = REG_A[reg];
+					m68040_do_fsave(addr, -1, 1);
+					break;
 
-			case 3:	// (An)+
-				addr = EA_AY_PI_32();
-				m68040_do_fsave(addr, reg, 1);
-				break;
+				case 3:	// (An)+
+					addr = EA_AY_PI_32();
+					m68040_do_fsave(addr, reg, 1);
+					break;
 
-			case 4: // -(An)
-				addr = EA_AY_PD_32();
-				m68040_do_fsave(addr, reg, 0);
-				break;
-			case 5: // (D16, An)
-				addr = EA_AY_DI_16();
-				m68040_do_fsave(addr, -1, 1);
-				break;
+				case 4: // -(An)
+					addr = EA_AY_PD_32();
+					m68040_do_fsave(addr, reg, 0);
+					break;
+				case 5: // (D16, An)
+					addr = EA_AY_DI_16();
+					m68040_do_fsave(addr, -1, 1);
+					break;
 
-			case 6: // (An) + (Xn) + d8
-				addr = EA_AY_IX_16();
-				m68040_do_fsave(addr, -1, 1);
-				break;
+				case 6: // (An) + (Xn) + d8
+					addr = EA_AY_IX_16();
+					m68040_do_fsave(addr, -1, 1);
+					break;
 
-			case 7: //
-				switch (reg)
+				case 7: //
 				{
-					case 1:     // (abs32)
+					switch (reg)
 					{
-						addr = EA_AL_32();
-						m68040_do_fsave(addr, -1, 1);
-						break;
+						case 1:     // (abs32)
+						{
+							addr = EA_AL_32();
+							m68040_do_fsave(addr, -1, 1);
+							break;
+						}
+						case 2:     // (d16, PC)
+						{
+							addr = EA_PCDI_16();
+							m68040_do_fsave(addr, -1, 1);
+							break;
+						}
+						default:
+							fatalerror("M68kFPU: FSAVE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
 					}
-					case 2:     // (d16, PC)
-					{
-						addr = EA_PCDI_16();
-						m68040_do_fsave(addr, -1, 1);
-						break;
-					}
-					default:
-						fatalerror("M68kFPU: FSAVE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
 				}
-
 				break;
 
 				default:
 					fatalerror("M68kFPU: FSAVE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
 			}
-			break;
 		}
 		break;
 
@@ -2132,50 +2132,51 @@ void m68040_fpu_op1()
 			printf("fresotre mode=%d\n",mode);
 			switch (mode)
 			{
-			case 2: // (An)
-				addr = REG_A[reg];
-				m68040_do_frestore(addr, -1);
-				break;
+				case 2: // (An)
+					addr = REG_A[reg];
+					m68040_do_frestore(addr, -1);
+					break;
 
-			case 3:	// (An)+
-				addr = EA_AY_PI_32();
-				m68040_do_frestore(addr, reg);
-				break;
+				case 3:	// (An)+
+					addr = EA_AY_PI_32();
+					m68040_do_frestore(addr, reg);
+					break;
 
-			case 5: // (D16, An)
-				addr = EA_AY_DI_16();
-				m68040_do_frestore(addr, -1);
-				break;
+				case 5: // (D16, An)
+					addr = EA_AY_DI_16();
+					m68040_do_frestore(addr, -1);
+					break;
 
-			case 6: // (An) + (Xn) + d8
-				addr = EA_AY_IX_16();
-				m68040_do_frestore(addr, -1);
-				break;
+				case 6: // (An) + (Xn) + d8
+					addr = EA_AY_IX_16();
+					m68040_do_frestore(addr, -1);
+					break;
 
-			case 7: //
-				switch (reg)
+				case 7: //
 				{
-					case 1:     // (abs32)
+					switch (reg)
 					{
-						addr = EA_AL_32();
-						m68040_do_frestore(addr, -1);
-						break;
+						case 1:     // (abs32)
+						{
+							addr = EA_AL_32();
+							m68040_do_frestore(addr, -1);
+							break;
+						}
+						case 2:     // (d16, PC)
+						{
+							addr = EA_PCDI_16();
+							m68040_do_frestore(addr, -1);
+							break;
+						}
+						default:
+							fatalerror("M68kFPU: FRESTORE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
 					}
-					case 2:     // (d16, PC)
-					{
-						addr = EA_PCDI_16();
-						m68040_do_frestore(addr, -1);
-						break;
-					}
-					default:
-						fatalerror("M68kFPU: FRESTORE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
 				}
 				break;
 
-			default:
-				fatalerror("M68kFPU: FRESTORE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
+				default:
+					fatalerror("M68kFPU: FRESTORE unhandled mode %d reg %d at %x\n", mode, reg, REG_PC);
 			}
-			break;
 		}
 		break;
 
