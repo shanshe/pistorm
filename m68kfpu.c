@@ -2028,6 +2028,7 @@ void m68040_do_frestore(uint32 addr, int reg)
 	uint8 m40 = m68ki_cpu.cpu_type & CPU_TYPE_040;
 	uint32 temp = m68ki_read_32(addr);
 
+	printf("do_restore temp=0x%.8X, reg=%d\n");
 	// check for nullptr frame
 	if (temp & 0xff000000)
 	{
