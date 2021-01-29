@@ -2183,7 +2183,7 @@ void m68040_fpu_op1()
 
 				case 3:	// (An)+
 					addr = EA_AY_PI_32();
-					m68040_do_frestore(addr, reg);
+					m68040_do_frestore(addr, -1);  // -1 was reg
 					break;
 
 				case 5: // (D16, An)
