@@ -1290,7 +1290,7 @@ static inline uint m68ki_read_8_fc(uint address, uint fc)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 
 	for (int i = 0; i < read_ranges; i++) {
@@ -1311,7 +1311,7 @@ static inline uint m68ki_read_16_fc(uint address, uint fc)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 
 	for (int i = 0; i < read_ranges; i++) {
@@ -1332,7 +1332,7 @@ static inline uint m68ki_read_32_fc(uint address, uint fc)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,1);
 #endif
 
 	for (int i = 0; i < read_ranges; i++) {
@@ -1353,7 +1353,7 @@ static inline void m68ki_write_8_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	for (int i = 0; i < write_ranges; i++) {
@@ -1375,7 +1375,7 @@ static inline void m68ki_write_16_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	for (int i = 0; i < write_ranges; i++) {
@@ -1397,7 +1397,7 @@ static inline void m68ki_write_32_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 	for (int i = 0; i < write_ranges; i++) {
@@ -1426,7 +1426,7 @@ static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 
 #if M68K_EMULATE_PMMU
 	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address);
+	    address = pmmu_translate_addr(address,0);
 #endif
 
 
