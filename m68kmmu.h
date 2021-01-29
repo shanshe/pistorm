@@ -558,8 +558,8 @@ uint32 pmmu_translate_addr_with_fc(uint32 addr_in, uint8 fc, uint16 rw, int limi
 	uint32 addr_out = 0;
 
 
-	MMULOG("%s: addr_in=%08x, fc=%d, ptest=%d, rw=%d, limit=%d\n",
-			__func__, addr_in, fc, ptest, rw, limit);
+	MMULOG("%s: addr_in=%08x, fc=%d, ptest=%d, rw=%d, limit=%d, pload=%d\n",
+			__func__, addr_in, fc, ptest, rw, limit, pload);
 	m68ki_cpu.mmu_tmp_sr = 0;
 
 	m68ki_cpu.mmu_last_logical_addr = addr_in;
