@@ -26,6 +26,7 @@
 #include "amiga-registers.h"
 
 uint8_t gary_cfg[8];
+extern uint8_t realtime_disassembly,catch_disassembly_cacr;
 
 uint8_t ramsey_cfg = 0x08;
 static uint8_t ramsey_id = RAMSEY_REV7;
@@ -203,6 +204,9 @@ skip_idewrite8:;
   }
 
   printf("Write Byte to Gayle Space 0x%06x (0x%06x)\n", address, value);
+	if(catch_disassembly_cacr)
+		realtime_disassembly=1;
+
 }
 
 void writeGayle(unsigned int address, unsigned int value) {
