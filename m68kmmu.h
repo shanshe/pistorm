@@ -331,8 +331,8 @@ uint16 pmmu_match_tt(uint32 addr_in, int fc, uint32 tt, uint16 rw)
 	uint32 address_mask = ((tt << 8) & 0xff000000) ^ 0xff000000;
 	uint32 fcmask = (~tt) & 7;
 	uint32 fcbits = (tt >> 4) & 7;
-	uint16 rwmask = (~tt & 0x100);
-	uint16 rwbit = (tt & 0x200);
+	uint16 rwmask = !!(~tt & 0x100);
+	uint16 rwbit = !!(tt & 0x200);
 
 	if ((addr_in & address_mask) != (address_base & address_mask))
 	{
@@ -944,7 +944,7 @@ void m68851_pload(uint32 ea, uint16 modes)
 {
 	uint32 ltmp = DECODE_EA_32(ea);
 	int fc = fc_from_modes(modes);
-	uint16 rw = (modes & 0x200);
+	uint16 rw = !!(modes & 0x200);
 
 	MMULOG("%s: PLOAD%c addr=%08x, fc=%d\n", __func__, rw ? 'R' : 'W', ltmp, fc);
 
@@ -974,7 +974,7 @@ void m68851_ptest(uint32 ea, uint16 modes)
 	uint32 p_addr;
 
 	int level = (modes >> 10) & 7;
-	uint16 rw = (modes & 0x200);
+	uint16 rw = !!(modes & 0x200);
 	int fc = fc_from_modes(modes);
 
 	MMULOG("PMMU: PTEST%c (%04X) pc=%08x sp=%08x va=%08x fc=%x level=%x a=%d, areg=%d\n",
