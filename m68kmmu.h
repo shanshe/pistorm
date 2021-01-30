@@ -10,7 +10,7 @@
 // MMU status register bit definitions
 
 #if 1
-#define MMULOG(A) if(realtime_disassembly){printf(A);}
+#define MMULOG(A) if(realtime_disassembly){printf A;}
 #else
 #define MMULOG(...)
 #endif
