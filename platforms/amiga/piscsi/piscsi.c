@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <endian.h>
@@ -11,6 +13,10 @@
 struct piscsi_dev devs[8];
 uint8_t piscsi_cur_drive = 0;
 uint32_t piscsi_u32[4];
+uint32_t piscsi_rom_size = 0;
+uint8_t *piscsi_rom_ptr;
+
+extern unsigned char ac_piscsi_rom[];
 
 static const char *op_type_names[4] = {
     "BYTE",
@@ -24,6 +30,23 @@ void piscsi_init() {
         devs[i].fd = -1;
         devs[i].c = devs[i].h = devs[i].s = 0;
     }
+
+    FILE *in = fopen("./platforms/amiga/piscsi/piscsi.rom", "rb");
+    if (in == NULL) {
+        printf("[PISCSI] Could not open PISCSI Boot ROM file for reading.\n");
+        ac_piscsi_rom[20] = 0;
+        ac_piscsi_rom[21] = 0;
+        ac_piscsi_rom[22] = 0;
+        ac_piscsi_rom[23] = 0;
+        return;
+    }
+    fseek(in, 0, SEEK_END);
+    piscsi_rom_size = ftell(in);
+    fseek(in, 0, SEEK_SET);
+    piscsi_rom_ptr = malloc(piscsi_rom_size);
+    fread(piscsi_rom_ptr, piscsi_rom_size, 1, in);
+    fclose(in);
+    printf("[PISCSI] Loaded Boot ROM.\n");
 }
 
 void piscsi_map_drive(char *filename, uint8_t index) {
@@ -60,6 +83,7 @@ void piscsi_unmap_drive(uint8_t index) {
 }
 
 extern struct emulator_config *cfg;
+extern void stop_cpu_emulation(uint8_t disasm_cur);
 
 void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
     int32_t r;
@@ -144,14 +168,131 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
                 piscsi_cur_drive = val;
             printf("[PISCSI] (%s) Drive number set to %d (%d)\n", op_type_names[type], piscsi_cur_drive, val);
             break;
+        case PISCSI_CMD_DEBUGME:
+            printf("[PISCSI] DebugMe triggered.\n");
+            stop_cpu_emulation(1);
+            break;
+        case PISCSI_CMD_DRIVER: {
+            printf("[PISCSI] Driver copy/patch called, destination address %.8X.\n", val);
+            int r = get_mapped_item_by_address(cfg, val);
+            if (r != -1) {
+                uint32_t addr = val - cfg->map_offset[r];
+                uint32_t rt_offs = 0;
+                uint8_t *dst_data = cfg->map_data[r];
+                memcpy(dst_data + addr, piscsi_rom_ptr + 0x400, 0x3C00);
+                
+                uint32_t base_offs = be32toh(*((uint32_t *)&dst_data[addr + 0x170])) + 2;
+                rt_offs = val + 0x16E;
+                printf ("Offset 1: %.8X -> %.8X\n", base_offs, rt_offs);
+                *((uint32_t *)&dst_data[addr + 0x170]) = htobe32(rt_offs);
+
+                uint32_t offs = be32toh(*((uint32_t *)&dst_data[addr + 0x174]));
+                printf ("Offset 2: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
+                *((uint32_t *)&dst_data[addr + 0x174]) = htobe32((offs - base_offs) + rt_offs);
+
+                offs = be32toh(*((uint32_t *)&dst_data[addr + 0x17C]));
+                printf ("Offset 3: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
+                *((uint32_t *)&dst_data[addr + 0x17C]) = htobe32((offs - base_offs) + rt_offs);
+
+                offs = be32toh(*((uint32_t *)&dst_data[addr + 0x180]));
+                printf ("Offset 4: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
+                *((uint32_t *)&dst_data[addr + 0x180]) = htobe32((offs - base_offs) + rt_offs);
+
+                offs = be32toh(*((uint32_t *)&dst_data[addr + 0x184]));
+                printf ("Offset 5: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
+                *((uint32_t *)&dst_data[addr + 0x184]) = htobe32((offs - base_offs) + rt_offs);
+
+            }
+            else {
+                for (int i = 0; i < 0x3C00; i++) {
+                    uint8_t src = piscsi_rom_ptr[0x400 + i];
+                    write8(addr + i, src);
+                }
+            }
+            break;
+        }
         default:
             printf("[PISCSI] Unhandled %s register write to %.8X: %d\n", op_type_names[type], addr, val);
             break;
     }
 }
 
+uint8_t piscsi_diag_area[] = {
+    0x90,
+    0x00,
+    0x00, 0x40,
+    0x2C, 0x00,
+    0x2C, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+};
+
+uint8_t fastata_diag_area[] = {
+    0x90,
+    0x00,
+    0x00, 0x10,
+    0x9e, 0x08,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x02,
+    0x00, 0x00,
+};
+
+uint8_t piscsi_diag_read;
+
+#define PIB 0x00
+
 uint32_t handle_piscsi_read(uint32_t addr, uint8_t type) {
     if (type) {}
+    uint8_t *diag_area = piscsi_diag_area;
+
+    if ((addr & 0xFFFF) >= PISCSI_CMD_ROM) {
+        uint32_t romoffs = (addr & 0xFFFF) - PISCSI_CMD_ROM;
+        /*if (romoffs < 14 && !piscsi_diag_read) {
+            printf("[PISCSI] %s read from DiagArea @$%.4X: ", op_type_names[type], romoffs);
+            uint32_t v = 0;
+            switch (type) {
+                case OP_TYPE_BYTE:
+                    v = diag_area[romoffs];
+                    printf("%.2X\n", v);
+                    break;
+                case OP_TYPE_WORD:
+                    v = *((uint16_t *)&diag_area[romoffs]);
+                    printf("%.4X\n", v);
+                    break;
+                case OP_TYPE_LONGWORD:
+                    v = (*((uint16_t *)&diag_area[romoffs]) << 16) | *((uint16_t *)&diag_area[romoffs + 2]);
+                    //v = *((uint32_t *)&diag_area[romoffs]);
+                    printf("%.8X\n", v);
+                    break;
+            }
+            if (romoffs == 0x0D)
+                piscsi_diag_read = 1;
+            return v;   
+        }*/
+        if (romoffs < (piscsi_rom_size + PIB)) {
+            printf("[PISCSI] %s read from Boot ROM @$%.4X (%.8X): ", op_type_names[type], romoffs, addr);
+            uint32_t v = 0;
+            switch (type) {
+                case OP_TYPE_BYTE:
+                    v = piscsi_rom_ptr[romoffs - PIB];
+                    printf("%.2X\n", v);
+                    break;
+                case OP_TYPE_WORD:
+                    v = be16toh(*((uint16_t *)&piscsi_rom_ptr[romoffs - PIB]));
+                    printf("%.4X\n", v);
+                    break;
+                case OP_TYPE_LONGWORD:
+                    //v = (*((uint16_t *)&piscsi_rom_ptr[romoffs - 14]) << 16) | *((uint16_t *)&piscsi_rom_ptr[romoffs - 12]);
+                    v = be32toh(*((uint32_t *)&piscsi_rom_ptr[romoffs - PIB]));
+                    printf("%.8X\n", v);
+                    break;
+            }
+            return v;
+        }
+        return 0;
+    }
     
     switch (addr & 0xFFFF) {
         case PISCSI_CMD_DRVTYPE:

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #define BOOTLDR_SIZE 0x400
+#define DIAG_TOTAL_SIZE 0x4000
 
 char *rombuf, *zerobuf, *devicebuf;
 
@@ -19,9 +20,15 @@ int main(int argc, char *argv[]) {
         fclose(rom);
         return 1;
     }
-    FILE *device = fopen("pi-scsi.device", "rb");
+    FILE *device = NULL;
+    if (argc > 1) {
+        device = fopen(argv[1], "rb");
+    }
+    else {
+        device = fopen("pi-scsi.device", "rb");
+    }
     if (!device) {
-        printf("Could not open file pi-scsi.device for reading.\n");
+        printf("Could not open device file for reading.\n");
         fclose(rom);
         fclose(out);
         return 1;
@@ -47,6 +54,11 @@ int main(int argc, char *argv[]) {
     fwrite(rombuf, rom_size, 1, out);
     fwrite(zerobuf, pad_size, 1, out);
     fwrite(devicebuf, device_size, 1, out);
+
+    free(zerobuf);
+    zerobuf = malloc(DIAG_TOTAL_SIZE - (rom_size + pad_size + device_size));
+    memset(zerobuf, 0x00, DIAG_TOTAL_SIZE - (rom_size + pad_size + device_size));
+    fwrite(zerobuf, DIAG_TOTAL_SIZE - (rom_size + pad_size + device_size), 1, out);
 
     printf("piscsi.rom successfully created.\n");
 

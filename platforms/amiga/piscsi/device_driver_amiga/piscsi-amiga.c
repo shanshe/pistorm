@@ -81,11 +81,17 @@ struct piscsi_base {
 
 struct ExecBase* SysBase = NULL;
 
+#ifdef _FSCSIDEV
+const char DevName[] = "scsi.device";
+#elif _FSCSI2ND
+const char DevName[] = "2nd.scsi.device";
+#else
 const char DevName[] = "pi-scsi.device";
+#endif
 const char DevIdString[] = "Pi-SCSI 0.1";
 
-const UWORD DevVersion = 1;
-const UWORD DevRevision = 0;
+const UWORD DevVersion = 43;
+const UWORD DevRevision = 10;
 
 #include "stabs.h"
 
@@ -146,6 +152,8 @@ uint32_t __UserDevCleanup(void) {
 uint32_t __UserDevOpen(struct IOExtTD *iotd, uint32_t num, uint32_t flags) {
     struct Node* node = (struct Node*)iotd;
     int io_err = IOERR_OPENFAIL;
+
+    WRITESHORT(PISCSI_CMD_DEBUGME, 1);
 
     int unit_num = 0;
     WRITELONG(PISCSI_CMD_DRVNUM, num);
