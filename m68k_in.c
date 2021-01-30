@@ -6348,7 +6348,6 @@ M68KMAKE_OP(move, 32, ai, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_AI_32();
-	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
