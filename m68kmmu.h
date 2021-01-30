@@ -893,6 +893,7 @@ uint32 pmmu_translate_addr(uint32 addr_in, uint16 rw)
 	else
 	{
 		addr_out = pmmu_translate_addr_with_fc(addr_in, m68ki_cpu.mmu_tmp_fc, rw,7,0,0);
+		MMULOG("ADDRIN %08X, ADDROUT %08X\n", addr_in, addr_out);
 	}
 	return addr_out;
 }
