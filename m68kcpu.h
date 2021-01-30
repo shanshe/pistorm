@@ -2188,7 +2188,7 @@ static inline void m68ki_exception_bus_error(void)
 	 */
 	if(CPU_RUN_MODE == RUN_MODE_BERR_AERR_RESET)
 	{
-m68k_read_memory_8(0x00ffff01);
+		m68k_read_memory_8(0x00ffff01);
 		CPU_STOPPED = STOP_LEVEL_HALT;
 		return;
 	}
@@ -2292,9 +2292,7 @@ static inline void m68ki_exception_format_error(void)
 /* Exception for address error */
 static inline void m68ki_exception_address_error(void)
 {
-	m68ki_cpu.mmu_tmp_buserror_fc = m68ki_cpu.mmu_tmp_fc;
-	m68ki_cpu.mmu_tmp_buserror_rw = m68ki_cpu.mmu_tmp_rw;
-	m68ki_cpu.mmu_tmp_buserror_sz = m68ki_cpu.mmu_tmp_sz;
+	u32 sr = m68ki_init_exception(EXCEPTION_ADDRESS_ERROR);
 
 	/* If we were processing a bus error, address error, or reset,
 	 * this is a catastrophic failure.
@@ -2302,12 +2300,10 @@ static inline void m68ki_exception_address_error(void)
 	 */
 	if(CPU_RUN_MODE == RUN_MODE_BERR_AERR_RESET_WSF)
 	{
-//		m68k_read_memory_8(0x00ffff01);
+		m68k_read_memory_8(0x00ffff01);
 		CPU_STOPPED = STOP_LEVEL_HALT;
 		return;
 	}
-
-	uint sr = m68ki_init_exception();
 
 	CPU_RUN_MODE = RUN_MODE_BERR_AERR_RESET_WSF;
 
@@ -2319,27 +2315,23 @@ static inline void m68ki_exception_address_error(void)
 	else if (CPU_TYPE_IS_010(CPU_TYPE))
 	{
 		/* only the 68010 throws this unique type-1000 frame */
-		m68ki_stack_frame_1000(m68ki_cpu.ppc, sr, EXCEPTION_BUS_ERROR);
+		m68ki_stack_frame_1000(REG_PPC, sr, EXCEPTION_BUS_ERROR);
 	}
-	else if (m68ki_cpu.mmu_tmp_buserror_address == m68ki_cpu.ppc)
+	else if (m68ki_cpu.mmu_tmp_buserror_address == REG_PPC)
 	{
-		m68ki_stack_frame_1010(sr, EXCEPTION_BUS_ERROR, m68ki_cpu.ppc, m68ki_cpu.mmu_tmp_buserror_address);
+		m68ki_stack_frame_1010(sr, EXCEPTION_BUS_ERROR, REG_PPC, m68ki_cpu.mmu_tmp_buserror_address);
 	}
 	else
 	{
-		m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, m68ki_cpu.ppc, m68ki_cpu.mmu_tmp_buserror_address);
+		m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, REG_PPC, m68ki_cpu.mmu_tmp_buserror_address);
 	}
-	/* Note: This is implemented for 68000 only! */
-	m68ki_stack_frame_buserr(sr);
 
 	m68ki_jump_vector(EXCEPTION_ADDRESS_ERROR);
+
 	m68ki_cpu.run_mode = RUN_MODE_BERR_AERR_RESET;
 
-	/* Use up some clock cycles. Note that we don't need to undo the
-	instruction's cycles here as we've longjmp:ed directly from the
-	instruction handler without passing the part of the excecute loop
-	that deducts instruction cycles */
-	USE_CYCLES(CYC_EXCEPTION[EXCEPTION_ADDRESS_ERROR]);
+	/* Use up some clock cycles and undo the instruction's cycles */
+	USE_CYCLES(CYC_EXCEPTION[EXCEPTION_ADDRESS_ERROR]- - m68ki_cpu.cyc_instruction[REG_IR]);
 }
 
 
