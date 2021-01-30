@@ -2292,7 +2292,7 @@ static inline void m68ki_exception_format_error(void)
 /* Exception for address error */
 static inline void m68ki_exception_address_error(void)
 {
-	u32 sr = m68ki_init_exception(EXCEPTION_ADDRESS_ERROR);
+	u32 sr = m68ki_init_exception();
 
 	/* If we were processing a bus error, address error, or reset,
 	 * this is a catastrophic failure.
