@@ -6320,7 +6320,7 @@ M68KMAKE_OP(move, 32, ai, d)
 {
 	uint res = DY;
 	uint ea = EA_AX_AI_32();
-printf("***********************EA = 0x%8X\n",ea);
+
 	m68ki_write_32(ea, res);
 
 	FLAG_N = NFLAG_32(res);
@@ -6334,6 +6334,7 @@ M68KMAKE_OP(move, 32, ai, a)
 {
 	uint res = AY;
 	uint ea = EA_AX_AI_32();
+	printf("***********************aEA = 0x%8X\n",ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6348,6 +6349,7 @@ M68KMAKE_OP(move, 32, ai, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_AI_32();
+	printf("***********************.EA = 0x%8X\n",ea);
 
 	m68ki_write_32(ea, res);
 
