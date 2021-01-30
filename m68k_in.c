@@ -6278,6 +6278,7 @@ M68KMAKE_OP(move, 32, d, d)
 {
 	uint res = DY;
 	uint* r_dst = &DX;
+	printf("*******%s EA = 0x%8X\n",__func__,res);
 
 	*r_dst = res;
 
@@ -6292,6 +6293,7 @@ M68KMAKE_OP(move, 32, d, a)
 {
 	uint res = AY;
 	uint* r_dst = &DX;
+	printf("*******%s EA = 0x%8X\n",__func__,res);
 
 	*r_dst = res;
 
@@ -6306,6 +6308,7 @@ M68KMAKE_OP(move, 32, d, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint* r_dst = &DX;
+	printf("*******%s EA = 0x%8X\n",__func__,res);
 
 	*r_dst = res;
 
@@ -6320,6 +6323,7 @@ M68KMAKE_OP(move, 32, ai, d)
 {
 	uint res = DY;
 	uint ea = EA_AX_AI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6334,7 +6338,7 @@ M68KMAKE_OP(move, 32, ai, a)
 {
 	uint res = AY;
 	uint ea = EA_AX_AI_32();
-	printf("***********************aEA = 0x%8X\n",ea);
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6349,7 +6353,7 @@ M68KMAKE_OP(move, 32, ai, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_AI_32();
-	printf("***********************.EA = 0x%8X\n",ea);
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6364,6 +6368,7 @@ M68KMAKE_OP(move, 32, pi, d)
 {
 	uint res = DY;
 	uint ea = EA_AX_PI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6378,6 +6383,7 @@ M68KMAKE_OP(move, 32, pi, a)
 {
 	uint res = AY;
 	uint ea = EA_AX_PI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6392,6 +6398,7 @@ M68KMAKE_OP(move, 32, pi, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_PI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6406,6 +6413,7 @@ M68KMAKE_OP(move, 32, pd, d)
 {
 	uint res = DY;
 	uint ea = EA_AX_PD_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_16(ea+2, res & 0xFFFF );
 	m68ki_write_16(ea, (res >> 16) & 0xFFFF );
@@ -6421,6 +6429,7 @@ M68KMAKE_OP(move, 32, pd, a)
 {
 	uint res = AY;
 	uint ea = EA_AX_PD_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_16(ea+2, res & 0xFFFF );
 	m68ki_write_16(ea, (res >> 16) & 0xFFFF );
@@ -6436,6 +6445,7 @@ M68KMAKE_OP(move, 32, pd, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_PD_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_16(ea+2, res & 0xFFFF );
 	m68ki_write_16(ea, (res >> 16) & 0xFFFF );
@@ -6451,6 +6461,7 @@ M68KMAKE_OP(move, 32, di, d)
 {
 	uint res = DY;
 	uint ea = EA_AX_DI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6465,6 +6476,7 @@ M68KMAKE_OP(move, 32, di, a)
 {
 	uint res = AY;
 	uint ea = EA_AX_DI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6479,6 +6491,7 @@ M68KMAKE_OP(move, 32, di, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_DI_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6493,6 +6506,7 @@ M68KMAKE_OP(move, 32, ix, d)
 {
 	uint res = DY;
 	uint ea = EA_AX_IX_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6507,6 +6521,7 @@ M68KMAKE_OP(move, 32, ix, a)
 {
 	uint res = AY;
 	uint ea = EA_AX_IX_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6521,6 +6536,7 @@ M68KMAKE_OP(move, 32, ix, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AX_IX_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6535,6 +6551,7 @@ M68KMAKE_OP(move, 32, aw, d)
 {
 	uint res = DY;
 	uint ea = EA_AW_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6549,6 +6566,7 @@ M68KMAKE_OP(move, 32, aw, a)
 {
 	uint res = AY;
 	uint ea = EA_AW_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6563,6 +6581,7 @@ M68KMAKE_OP(move, 32, aw, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AW_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6577,6 +6596,7 @@ M68KMAKE_OP(move, 32, al, d)
 {
 	uint res = DY;
 	uint ea = EA_AL_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6591,6 +6611,7 @@ M68KMAKE_OP(move, 32, al, a)
 {
 	uint res = AY;
 	uint ea = EA_AL_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
@@ -6605,6 +6626,7 @@ M68KMAKE_OP(move, 32, al, .)
 {
 	uint res = M68KMAKE_GET_OPER_AY_32;
 	uint ea = EA_AL_32();
+	printf("*******%s EA = 0x%8X\n",__func__,ea);
 
 	m68ki_write_32(ea, res);
 
