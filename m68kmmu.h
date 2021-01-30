@@ -127,7 +127,7 @@ void pmmu_set_buserror(uint32 addr_in)
 		m68ki_cpu.mmu_tmp_buserror_rw = m68ki_cpu.mmu_tmp_rw;
 		m68ki_cpu.mmu_tmp_buserror_fc = m68ki_cpu.mmu_tmp_fc;
 		m68ki_cpu.mmu_tmp_buserror_sz = m68ki_cpu.mmu_tmp_sz;
-		m68ki_exception_address_error(); // trigger an address error exception
+		m68k_pulse_bus_error();
 	}
 }
 
@@ -520,7 +520,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 
 		if (m68ki_cpu.mmu_tmp_sr & M68K_MMU_SR_BUS_ERROR)
 		{
-			// Bus erorr during page table walking is always fatal
+			// Bus error during page table walking is always fatal
 			resolved = 1;
 			break;
 		}
@@ -623,6 +623,7 @@ uint32 pmmu_translate_addr_with_fc(uint32 addr_in, uint8 fc, uint16 rw, int limi
 		{
 			MMULOG(("%s: set buserror (SR %04X)\n", __func__, m68ki_cpu.mmu_tmp_sr));
 			pmmu_set_buserror(addr_in);
+			m68ki_exception_address_error(); // trigger an address error exception
 		}
 	}
 

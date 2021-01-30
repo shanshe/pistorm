@@ -2325,13 +2325,18 @@ static inline void m68ki_exception_address_error(void)
 	{
 		m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, REG_PPC, m68ki_cpu.mmu_tmp_buserror_address);
 	}
+	/* Note: This is implemented for 68000 only! */
+	m68ki_stack_frame_buserr(sr);
 
 	m68ki_jump_vector(EXCEPTION_ADDRESS_ERROR);
 
 	m68ki_cpu.run_mode = RUN_MODE_BERR_AERR_RESET;
 
-	/* Use up some clock cycles and undo the instruction's cycles */
-	USE_CYCLES(CYC_EXCEPTION[EXCEPTION_ADDRESS_ERROR]- - m68ki_cpu.cyc_instruction[REG_IR]);
+	/* Use up some clock cycles. Note that we don't need to undo the
+	instruction's cycles here as we've longjmp:ed directly from the
+	instruction handler without passing the part of the excecute loop
+	that deducts instruction cycles */
+	USE_CYCLES(CYC_EXCEPTION[EXCEPTION_ADDRESS_ERROR]);
 }
 
 
