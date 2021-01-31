@@ -616,7 +616,7 @@ typedef uint32 uint64;
 	#include <setjmp.h>
 
 /* sigjmp() on Mac OS X and *BSD in general saves signal contexts and is super-slow, use sigsetjmp() to tell it not to */
-#ifdef _BSD_SETJMP_H
+#ifdef 1//_BSD_SETJMP_H
 extern sigjmp_buf m68ki_aerr_trap;
 #define m68ki_set_address_error_trap(m68k) \
 	if(sigsetjmp(m68ki_aerr_trap, 0) != 0) \
@@ -643,7 +643,6 @@ extern jmp_buf m68ki_aerr_trap;
 	#define m68ki_set_address_error_trap() \
 		if(setjmp(m68ki_aerr_trap) != 0) \
 		{ \
-			printf("*-*-*-*-*-*-*-*-*-*-* Address error trap!!!! <------------------\n");\
 			m68ki_exception_address_error(); \
 			if(CPU_STOPPED) \
 			{ \
@@ -2175,6 +2174,7 @@ extern jmp_buf m68ki_bus_error_jmp_buf;
 static inline void m68ki_exception_bus_error(void)
 {
 	int i;
+	printf("*-*-*-*-*-*-*-*-*-*-* Bus error trap!!!! <------------------\n");\
 
 	/* If we were processing a bus error, address error, or reset,
 	 * this is a catastrophic failure.
@@ -2286,6 +2286,7 @@ static inline void m68ki_exception_format_error(void)
 /* Exception for address error */
 static inline void m68ki_exception_address_error(void)
 {
+	printf("*-*-*-*-*-*-*-*-*-*-* Address error trap!!!! <------------------\n");\
 	uint32 sr = m68ki_init_exception();
 
 	/* If we were processing a bus error, address error, or reset,
