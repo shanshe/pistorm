@@ -641,6 +641,7 @@ extern sigjmp_buf m68ki_aerr_trap;
 #else
 extern jmp_buf m68ki_aerr_trap;
 	#define m68ki_set_address_error_trap() \
+		printf("*-*-*-*-*-*-*-*-*-*-* Address error trap!!!! <------------------\n");\
 		if(setjmp(m68ki_aerr_trap) != 0) \
 		{ \
 			m68ki_exception_address_error(); \
@@ -1182,26 +1183,19 @@ static inline uint m68ki_read_imm_16(void)
 	m68ki_cpu.mmu_tmp_sz = M68K_SZ_WORD;
 	m68ki_check_address_error(REG_PC, MODE_READ, FLAG_S | FUNCTION_CODE_USER_PROGRAM); /* auto-disable (see m68kcpu.h) */
 
-#if M68K_SEPARATE_READS
-#if M68K_EMULATE_PMMU
-	if (PMMU_ENABLED)
-	    address = pmmu_translate_addr(address,1);
-#endif
-#endif
-
 #if M68K_EMULATE_PREFETCH
 {
 	uint result;
 	if(REG_PC != CPU_PREF_ADDR)
 	{
-		CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(REG_PC));
+		CPU_PREF_DATA = m68ki_ic_readimm16(REG_PC);
 		CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
 	}
 	result = MASK_OUT_ABOVE_16(CPU_PREF_DATA);
 	REG_PC += 2;
 	if (!m68ki_cpu.mmu_tmp_buserror_occurred) {
 		// prefetch only if no bus error occurred in opcode fetch
-		CPU_PREF_DATA = m68k_read_immediate_16(ADDRESS_68K(REG_PC));
+		CPU_PREF_DATA = m68ki_ic_readimm16(REG_PC);
 		CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
 		// ignore bus error on prefetch
 		m68ki_cpu.mmu_tmp_buserror_occurred = 0;
@@ -1250,7 +1244,7 @@ static inline uint m68ki_read_imm_32(void)
 
 	temp_val = MASK_OUT_ABOVE_32((temp_val << 16) | MASK_OUT_ABOVE_16(CPU_PREF_DATA));
 	REG_PC += 2;
-	CPU_PREF_DATA = m68ki_ic_readimm16(ADDRESS_68K(REG_PC));
+	CPU_PREF_DATA = m68ki_ic_readimm16(REG_PC);
 	CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
 
 	return temp_val;
