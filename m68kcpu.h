@@ -641,9 +641,9 @@ extern sigjmp_buf m68ki_aerr_trap;
 #else
 extern jmp_buf m68ki_aerr_trap;
 	#define m68ki_set_address_error_trap() \
-		printf("*-*-*-*-*-*-*-*-*-*-* Address error trap!!!! <------------------\n");\
 		if(setjmp(m68ki_aerr_trap) != 0) \
 		{ \
+			printf("*-*-*-*-*-*-*-*-*-*-* Address error trap!!!! <------------------\n");\
 			m68ki_exception_address_error(); \
 			if(CPU_STOPPED) \
 			{ \
