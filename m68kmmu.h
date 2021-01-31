@@ -622,7 +622,6 @@ uint32 pmmu_translate_addr_with_fc(uint32 addr_in, uint8 fc, uint16 rw, int limi
 		{
 			MMULOG(("%s: set buserror (SR %04X)\n", __func__, m68ki_cpu.mmu_tmp_sr));
 			pmmu_set_buserror(addr_in);
-			m68ki_exception_trap(EXCEPTION_BUS_ERROR);
 		}
 	}
 
