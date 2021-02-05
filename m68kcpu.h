@@ -43,6 +43,7 @@ extern "C" {
 #include <endian.h>
 
 #include <setjmp.h>
+#include <stdio.h>
 
 /* ======================================================================== */
 /* ==================== ARCHITECTURE-DEPENDANT DEFINES ==================== */
@@ -667,6 +668,7 @@ extern jmp_buf m68ki_aerr_trap;
 			longjmp(m68ki_aerr_trap, 1); \
 		}
 #endif
+	#define m68ki_bus_error(ADDR,WRITE_MODE) m68ki_aerr_address=ADDR;m68ki_aerr_write_mode=WRITE_MODE;m68ki_exception_bus_error()
 
 	#define m68ki_check_address_error_010_less(ADDR, WRITE_MODE, FC) \
 		if (CPU_TYPE_IS_010_LESS(CPU_TYPE)) \

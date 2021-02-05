@@ -203,7 +203,6 @@ skip_idewrite8:;
   }
 
   printf("Write Byte to Gayle Space 0x%06x (0x%06x)\n", address, value);
-
 }
 
 void writeGayle(unsigned int address, unsigned int value) {
