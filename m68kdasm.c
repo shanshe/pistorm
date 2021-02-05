@@ -218,7 +218,7 @@ static char g_dasm_str[100]; /* string to hold disassembly */
 static char g_helper_str[100]; /* string to hold helpful info */
 static uint g_cpu_pc;        /* program counter */
 static uint g_cpu_ir;        /* instruction register */
-unsigned int g_cpu_type;
+static uint g_cpu_type;
 static uint g_opcode_type;
 static const unsigned char* g_rawop;
 static uint g_rawbasepc;

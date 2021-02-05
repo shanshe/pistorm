@@ -45,7 +45,6 @@ extern unsigned char cdtv_sram[32 * SIZE_KILO];
 static uint8_t rtg_enabled = 0, piscsi_enabled = 0, pinet_enabled = 0;
 
 extern uint32_t piscsi_base;
-extern uint8_t piscsi_diag_read = 0;
 
 extern void stop_cpu_emulation(uint8_t disasm_cur);
 

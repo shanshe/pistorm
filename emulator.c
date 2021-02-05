@@ -291,9 +291,9 @@ int main(int argc, char *argv[]) {
       write16(0xdff09c, 0x8000 | (1 << 3));
       m68k_set_irq(2);
     }
-    /*else {
+    else {
       m68k_set_irq(0);
-    }*/
+    }
 
     while (get_key_char(&c, &c_code, &c_type)) {
       if (c && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {

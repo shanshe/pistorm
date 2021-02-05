@@ -3,7 +3,7 @@
 //  Omega
 //
 //  Created by Matt Parsons on 06/03/2019.
-//  Copyright 2019 Matt Parsons. All rights reserved.
+//  Copyright © 2019 Matt Parsons. All rights reserved.
 //
 
 #ifndef Gayle_h
