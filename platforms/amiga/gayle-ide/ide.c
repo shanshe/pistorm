@@ -624,6 +624,8 @@ uint8_t ide_read8(struct ide_controller *c, uint8_t r)
       return c->lba4 | ((c->selected) ? 0x10 : 0x00);
     case ide_status_r:
       d->intrq = 0;		/* Acked */
+      /* fall through */
+      /* no break */
     case ide_altst_r:
       return t->status;
     default:

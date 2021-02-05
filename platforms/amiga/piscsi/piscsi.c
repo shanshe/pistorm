@@ -244,7 +244,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
                 printf("[PISCSI] No mapped range found for read.\n");
                 uint8_t c = 0;
                 lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
-                for (int i = 0; i < piscsi_u32[1]; i++) {
+                for (uint32_t i = 0; i < piscsi_u32[1]; i++) {
                     read(d->fd, &c, 1);
 #ifndef FAKESTORM
                     write8(piscsi_u32[2] + i, (uint32_t)c);
@@ -270,7 +270,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
                 printf("[PISCSI] No mapped range found for write.\n");
                 uint8_t c = 0;
                 lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
-                for (int i = 0; i < piscsi_u32[1]; i++) {
+                for (uint32_t i = 0; i < piscsi_u32[1]; i++) {
 #ifndef FAKESTORM
                     c = read8(piscsi_u32[2] + i);
 #endif

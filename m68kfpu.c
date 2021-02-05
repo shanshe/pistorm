@@ -272,6 +272,10 @@ static inline void store_pack_float80(uint32 ea, int k, floatx80 fpr)
 
 static inline void SET_CONDITION_CODES(floatx80 reg)
 {
+//  u64 *regi;
+
+//  regi = (u64 *)&reg;
+
 	REG_FPSR &= ~(FPCC_N|FPCC_Z|FPCC_I|FPCC_NAN);
 
 	// sign flag
@@ -748,12 +752,12 @@ static floatx80 READ_EA_FPE(uint32 ea)
 					break;
 
 				case 4: // immediate (JFF)
-				{
-				  uint32 ea = REG_PC;
-				  fpr = load_extended_float80(ea);
-				  REG_PC += 12;
-				}
-				break;
+					{
+						uint32 ea = REG_PC;
+						fpr = load_extended_float80(ea);
+						REG_PC += 12;
+					}
+					break;
 
 				default:
 					fatalerror("M68kFPU: READ_EA_FPE: unhandled mode %d, reg %d, at %08X\n", mode, reg, REG_PC);
@@ -1371,7 +1375,7 @@ static void fpgen_rm_reg(uint16 w2)
 
 				// handle it right here, the usual opmode bits aren't valid in the FMOVECR case
 				REG_FP[dst] = source;
-//	     		SET_CONDITION_CODES(REG_FP[dst]); // JFF when destination is a register, we HAVE to update FPCR
+				SET_CONDITION_CODES(REG_FP[dst]); // JFF when destination is a register, we HAVE to update FPCR
 				USE_CYCLES(4);
 				return;
 			}
@@ -1399,7 +1403,7 @@ static void fpgen_rm_reg(uint16 w2)
 			sint32 temp;
 			temp = floatx80_to_int32(source);
 			REG_FP[dst] = int32_to_floatx80(temp);
-//	  		SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
+			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
 			break;
 		}
 		case 0x03:		// FINTRZ
@@ -1407,7 +1411,7 @@ static void fpgen_rm_reg(uint16 w2)
 			sint32 temp;
 			temp = floatx80_to_int32_round_to_zero(source);
 			REG_FP[dst] = int32_to_floatx80(temp);
-//			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
+			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
 			break;
 		}
 		case 0x04:		// FSQRT
@@ -1496,10 +1500,11 @@ static void fpgen_rm_reg(uint16 w2)
 			USE_CYCLES(6);
 			break;
 		}
+		case 0x60:		// FSDIVS (JFF) (source has already been converted to floatx80)
 		case 0x20:		// FDIV
 		{
 			REG_FP[dst] = floatx80_div(REG_FP[dst], source);
-//		    SET_CONDITION_CODES(REG_FP[dst]); // JFF
+			SET_CONDITION_CODES(REG_FP[dst]); // JFF
 			USE_CYCLES(43);
 			break;
 		}
@@ -1520,6 +1525,7 @@ static void fpgen_rm_reg(uint16 w2)
 			USE_CYCLES(9);
 			break;
 		}
+		case 0x63:		// FSMULS (JFF) (source has already been converted to floatx80)
 		case 0x23:		// FMUL
 		{
 			REG_FP[dst] = floatx80_mul(REG_FP[dst], source);
@@ -1787,7 +1793,8 @@ static void fmovem(uint16 w2)
 			case 1: // Dynamic register list, postincrement or control addressing mode.
 				// FIXME: not really tested, but seems to work
 				reglist = REG_D[(reglist >> 4) & 7];
-//				[[fallthrough]];
+				/* fall through */
+				/* no break */
 			case 0:     // Static register list, predecrement or control addressing mode
 			{
 				for (i=0; i < 8; i++)
@@ -1846,8 +1853,9 @@ static void fmovem(uint16 w2)
 			case 3: // Dynamic register list, predecrement addressing mode.
 				// FIXME: not really tested, but seems to work
 				reglist = REG_D[(reglist >> 4) & 7];
-//				[[fallthrough]];
-			case 2:		// Static register list, postincrement addressing mode
+				/* fall through */
+				/* no break */
+			case 2:		// Static register list, postincrement or control addressing mode
 			{
 				for (i=0; i < 8; i++)
 				{
@@ -1898,7 +1906,7 @@ static void fbcc16(void)
 	}
 
 	USE_CYCLES(7);
-	}
+}
 
 static void fbcc32(void)
 {
@@ -1966,14 +1974,15 @@ void m68040_fpu_op0()
 			switch ((REG_IR >> 3) & 0x7) {
 			case 1: // FDBcc
 				// TODO:
+				printf("M68kFPU: unimplemented FDBcc main op %d with mode %d at %08X\n", (REG_IR >> 6) & 0x3, (REG_IR >> 3) & 0x7, REG_PC-4);
 				break;
 			default: // FScc (?)
 				fscc();
 				return;
 			}
 			fatalerror("M68kFPU: unimplemented main op %d with mode %d at %08X\n", (REG_IR >> 6) & 0x3, (REG_IR >> 3) & 0x7, REG_PC-4);
+			break;
 		}
-
 		case 2:     // FBcc disp16
 		{
 			fbcc16();
@@ -2034,7 +2043,7 @@ static int perform_fsave(uint32 addr, int inc)
 static void do_frestore_null(void)
 {
 	int i;
-//	printf("do_frestore_null\n");
+
 	REG_FPCR = 0;
 	REG_FPSR = 0;
 	REG_FPIAR = 0;
@@ -2072,7 +2081,6 @@ void m68040_do_frestore(uint32 addr, int reg)
 	// check for nullptr frame
 	if (temp & 0xff000000)
 	{
-//		printf("do_restore temp=0x%.8X, reg=%d\n",temp,reg);
 		// we don't handle non-nullptr frames
 		m68ki_cpu.fpu_just_reset = 0;
 
@@ -2114,7 +2122,6 @@ void m68040_fpu_op1()
 	{
 		case 0:		// FSAVE <ea>
 		{
-//			printf("fsave mode=%d\n",mode);
 			switch (mode)
 			{
 				case 2: // (An)
@@ -2128,10 +2135,8 @@ void m68040_fpu_op1()
 					break;
 
 				case 4: // -(An)
-//					printf("A7 prev=0x%.8X\n",REG_A[7]);
 					addr = EA_AY_PD_32();
 					m68040_do_fsave(addr, -1, 0);  // -1 was reg
-//					printf("A7 post=0x%.8X\n",REG_A[7]);
 					break;
 				case 5: // (D16, An)
 					addr = EA_AY_DI_16();
@@ -2173,7 +2178,6 @@ void m68040_fpu_op1()
 
 		case 1:		// FRESTORE <ea>
 		{
-//			printf("frestore mode=%d\n",mode);
 			switch (mode)
 			{
 				case 2: // (An)

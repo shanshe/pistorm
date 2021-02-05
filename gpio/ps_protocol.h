@@ -1,6 +1,6 @@
 /*
     Code reorganized and rewritten by 
-    Niklas Ekström 2021 (https://github.com/niklasekstrom)
+    Niklas Ekstrom 2021 (https://github.com/niklasekstrom)
 */
 
 #ifndef _PS_PROTOCOL_H
@@ -60,6 +60,8 @@
 #define GPFSEL0_OUTPUT 0x0924c240
 #define GPFSEL1_OUTPUT 0x09249249
 #define GPFSEL2_OUTPUT 0x00000249
+
+void m68k_set_irq(unsigned int int_level);
 
 unsigned int ps_read_8(unsigned int address);
 unsigned int ps_read_16(unsigned int address);

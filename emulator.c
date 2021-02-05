@@ -114,7 +114,7 @@ void stop_cpu_emulation(uint8_t disasm_cur) {
 
 //unsigned char g_kick[524288];
 //unsigned char g_ram[FASTSIZE + 1]; /* RAM */
-int ovl;
+unsigned int ovl;
 static volatile unsigned char maprom;
 
 void sigint_handler(int sig_num) {

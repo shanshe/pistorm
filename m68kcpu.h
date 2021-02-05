@@ -1190,14 +1190,14 @@ static inline uint m68ki_read_imm_16(void)
 	if(REG_PC != CPU_PREF_ADDR)
 	{
 		CPU_PREF_DATA = m68ki_ic_readimm16(REG_PC);
-		CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
+		CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ((uint32)~0) : REG_PC;
 	}
 	result = MASK_OUT_ABOVE_16(CPU_PREF_DATA);
 	REG_PC += 2;
 	if (!m68ki_cpu.mmu_tmp_buserror_occurred) {
 		// prefetch only if no bus error occurred in opcode fetch
 		CPU_PREF_DATA = m68ki_ic_readimm16(REG_PC);
-		CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
+		CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ((uint32)~0) : REG_PC;
 		// ignore bus error on prefetch
 		m68ki_cpu.mmu_tmp_buserror_occurred = 0;
 	}
@@ -1246,7 +1246,7 @@ static inline uint m68ki_read_imm_32(void)
 	temp_val = MASK_OUT_ABOVE_32((temp_val << 16) | MASK_OUT_ABOVE_16(CPU_PREF_DATA));
 	REG_PC += 2;
 	CPU_PREF_DATA = m68ki_ic_readimm16(REG_PC);
-	CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ~0 : REG_PC;
+	CPU_PREF_ADDR = m68ki_cpu.mmu_tmp_buserror_occurred ? ((uint32)~0) : REG_PC;
 
 	return temp_val;
 #else

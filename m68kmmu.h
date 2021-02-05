@@ -210,10 +210,10 @@ int fc_from_modes(uint16 modes);
 
 void pmmu_atc_flush_fc_ea(uint16 modes)
 {
-	int fcmask = (modes >> 5) & 7;
-	int fc = fc_from_modes(modes) & fcmask;
-	int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
-	int mode = (modes >> 10) & 7;
+	unsigned int fcmask = (modes >> 5) & 7;
+	unsigned int fc = fc_from_modes(modes) & fcmask;
+	unsigned int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
+	unsigned int mode = (modes >> 10) & 7;
 	uint32 ea;
 
 	switch (mode)
@@ -240,7 +240,7 @@ void pmmu_atc_flush_fc_ea(uint16 modes)
 
 		ea = DECODE_EA_32(m68ki_cpu.ir);
 		MMULOG(("flush by fc/ea: fc %d, mask %d, ea %08x\n", fc, fcmask, ea));
-		for(int i=0,e;i<MMU_ATC_ENTRIES;i++)
+		for(unsigned int i=0,e;i<MMU_ATC_ENTRIES;i++)
 		{
 			e=m68ki_cpu.mmu_atc_tag[i];
 			if ((e & M68K_MMU_ATC_VALID) &&
@@ -265,7 +265,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 					 uint32 *addr_out,int ptest)
 {
 	MMULOG(("%s: LOOKUP addr_in=%08x, fc=%d, ptest=%d, rw=%d\n", __func__, addr_in, fc, ptest,rw));
-	int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
+	unsigned int ps = (m68ki_cpu.mmu_tc >> 20) & 0xf;
 	uint32 atc_tag = M68K_MMU_ATC_VALID | ((fc & 7) << 24) | ((addr_in >> ps) << (ps - 8));
 
 	for (int i = 0; i < MMU_ATC_ENTRIES; i++)
@@ -275,6 +275,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 		{
 			continue;
 		}
+		
 		uint32 atc_data = m68ki_cpu.mmu_atc_data[i];
 
 		if (!ptest && !rw)
@@ -306,7 +307,7 @@ uint16 pmmu_atc_lookup(uint32 addr_in, int fc, uint16 rw,
 		{
 			m68ki_cpu.mmu_tmp_sr |= M68K_MMU_SR_BUS_ERROR|M68K_MMU_SR_INVALID;
 		}
-		*addr_out = (atc_data << 8) | (addr_in & ~(~0 << ps));
+		*addr_out = (atc_data << 8) | (addr_in & ~(((uint32)~0) << ps));
 		MMULOG(("%s: addr_in=%08x, addr_out=%08x, MMU SR %04x\n",
 				__func__, addr_in, *addr_out, m68ki_cpu.mmu_tmp_sr));
 		return 1;
@@ -359,8 +360,8 @@ void update_descriptor(uint32 tptr, int type, uint32 entry, int16 rw)
 			!(entry & M68K_MMU_DF_MODIFIED) &&
 			!(entry & M68K_MMU_DF_WP))
 	{
-		MMULOG(("%s: set M+U at %08x\n", __func__, tptr);
-		m68k_write_memory_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED));
+		MMULOG(("%s: set M+U at %08x\n", __func__, tptr));
+		m68k_write_memory_32(tptr, entry | M68K_MMU_DF_USED | M68K_MMU_DF_MODIFIED);
 	}
 	else if (type != M68K_MMU_DF_DT_INVALID && !(entry & M68K_MMU_DF_USED))
 	{
@@ -389,10 +390,10 @@ void update_sr(int type, uint32 tbl_entry, int fc,uint16 _long)
 		{
 			m68ki_cpu.mmu_tmp_sr |= M68K_MMU_SR_MODIFIED;
 		}
-//		[[fallthrough]];
+		/* FALLTHROUGH */
 
 	case M68K_MMU_DF_DT_TABLE_4BYTE:
-//		[[fallthrough]];
+		/* FALLTHROUGH */
 
 	case M68K_MMU_DF_DT_TABLE_8BYTE:
 
@@ -412,7 +413,7 @@ void update_sr(int type, uint32 tbl_entry, int fc,uint16 _long)
 }
 
 //template<bool ptest>
-uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
+uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, uint8 fc,
 						int limit, uint16 rw, uint32 *addr_out, int ptest)
 {
 	int level = 0;
@@ -454,7 +455,7 @@ uint16 pmmu_walk_tables(uint32 addr_in, int type, uint32 table, int fc,
 			case M68K_MMU_DF_DT_PAGE:   // page descriptor, will cause direct mapping
 				if (!ptest)
 				{
-					table &= ~0 << pagesize;
+					table &= ((uint32)~0) << pagesize;
 					*addr_out = table + (addr_in >> pageshift);
 				}
 				resolved = 1;
@@ -1067,7 +1068,9 @@ void m68851_pmove_put(uint32 ea, uint16 modes)
 			pmmu_atc_flush();
 		}
 	}
-//	[[fallthrough]];
+	/* fall through */
+	/* no break */
+
 	case 1:
 		logerror("680x0: unknown PMOVE case 1, PC %x\n", m68ki_cpu.pc);
 		break;
@@ -1158,7 +1161,8 @@ void m68851_pmove_put(uint32 ea, uint16 modes)
 				break;
 			}
 			// fall through; unknown PMOVE mode unless MC68020 with MC68851
-//			[[fallthrough]];
+			/* fall through */
+			/* no break */
 		default:
 			logerror("680x0: PMOVE to unknown MMU register %x, PC %x\n", (modes>>10) & 7, m68ki_cpu.pc);
 			break;
