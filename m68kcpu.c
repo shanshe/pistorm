@@ -1002,6 +1002,7 @@ int m68k_execute(int num_cycles)
 			REG_PPC = REG_PC;
 
 			/* Record previous D/A register state (in case of bus error) */
+#define M68K_BUSERR_THING
 #ifdef M68K_BUSERR_THING
 			for (i = 15; i >= 0; i--){
 				REG_DA_SAVE[i] = REG_DA[i];
