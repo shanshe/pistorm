@@ -2322,8 +2322,6 @@ static inline void m68ki_exception_address_error(void)
 	{
 		m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, REG_PPC, m68ki_cpu.mmu_tmp_buserror_address);
 	}
-	/* Note: This is implemented for 68000 only! */
-	m68ki_stack_frame_buserr(sr);
 
 	m68ki_jump_vector(EXCEPTION_ADDRESS_ERROR);
 
