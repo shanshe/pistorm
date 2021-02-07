@@ -52,6 +52,7 @@ uint32_t gayle_ide_base = GDATA;
 uint8_t gayle_ide_adj = 0;
 
 struct ide_controller *get_ide(int index) {
+	(void)index;
   //if (index) {}
   return ide0;
 }
@@ -256,7 +257,7 @@ void writeGayleL(unsigned int address, unsigned int value) {
 }
 
 uint8_t readGayleB(unsigned int address) {
-  uint8_t ide_action = 0, ide_val = 0;
+  uint8_t ide_action = 0;//, ide_val = 0;
 
   if (address >= gayle_ide_base) {
     switch ((address - gayle_ide_base) - gayle_ide_adj) {
@@ -291,7 +292,8 @@ uint8_t readGayleB(unsigned int address) {
     }
     goto skip_ideread8;
 ideread8:;
-    ide_val = ide_read8(ide0, ide_action);
+    //ide_val =
+                ide_read8(ide0, ide_action);
     //if (((address - gayle_ide_base) - gayle_ide_adj) == GDEVHEAD_OFFSET)
       //printf("Read from GDEVHEAD: %.2X\n", ide_val);
     return ide_read8(ide0, ide_action);

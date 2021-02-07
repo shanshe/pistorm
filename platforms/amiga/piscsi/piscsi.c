@@ -275,7 +275,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             else {
                 printf("[PISCSI] No mapped range found for read.\n");
                 uint8_t c = 0;
-                for (int i = 0; i < piscsi_u32[1]; i++) {
+                for (unsigned int i = 0; i < piscsi_u32[1]; i++) {
                     read(d->fd, &c, 1);
                     write8(piscsi_u32[2] + i, (uint32_t)c);
                 }
@@ -310,7 +310,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             else {
                 printf("[PISCSI] No mapped range found for write.\n");
                 uint8_t c = 0;
-                for (int i = 0; i < piscsi_u32[1]; i++) {
+                for (unsigned int i = 0; i < piscsi_u32[1]; i++) {
                     c = read8(piscsi_u32[2] + i);
                     write(d->fd, &c, 1);
                 }

@@ -137,7 +137,7 @@ void sigint_handler(int sig_num) {
 
 int main(int argc, char *argv[]) {
   int g;
-  const struct sched_param priority = {99};
+//  const struct sched_param priority = {99};
 
   // Some command line switch stuffles
   for (g = 1; g < argc; g++) {
