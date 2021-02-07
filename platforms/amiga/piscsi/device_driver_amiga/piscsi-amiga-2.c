@@ -19,6 +19,8 @@
 #include <proto/disk.h>
 #include <proto/expansion.h>
 
+#include "newstyle.h"
+
 #include "../piscsi-enums.h"
 #include <stdint.h>
 
@@ -85,7 +87,7 @@ char device_name[] = DEVICE_NAME;
 char device_id_string[] = DEVICE_ID_STRING;
 
 uint8_t piscsi_perform_io(struct piscsi_unit *u, struct IORequest *io);
-uint8_t piscsi_rw(struct piscsi_unit *u, struct IORequest *io, uint32_t offset, uint8_t write);
+uint8_t piscsi_rw(struct piscsi_unit *u, struct IORequest *io);
 uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io);
 
 //#define debug(...)
@@ -95,7 +97,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io);
 
 struct piscsi_base *dev_base = NULL;
 
-static struct Library __attribute__((used)) * init_device(uint8_t *seg_list asm("a0"), struct Library *dev asm("d0"))
+static struct Library __attribute__((used)) *init_device(uint8_t *seg_list asm("a0"), struct Library *dev asm("d0"))
 {
     SysBase = *(struct ExecBase **)4L;
 
@@ -201,45 +203,58 @@ static uint32_t __attribute__((used)) abort_io(struct Library *dev asm("a6"), st
     return IOERR_ABORTED;
 }
 
-uint8_t piscsi_rw(struct piscsi_unit *u, struct IORequest *io, uint32_t offset, uint8_t write) {
+uint8_t piscsi_rw(struct piscsi_unit *u, struct IORequest *io) {
     struct IOStdReq *iostd = (struct IOStdReq *)io;
     struct IOExtTD *iotd = (struct IOExtTD *)io;
 
     uint8_t* data;
-    uint32_t len, max_addr;
+    uint32_t len;
     //uint32_t block, num_blocks;
-    uint8_t sderr;
+    uint8_t sderr = 0;
 
     data = iotd->iotd_Req.io_Data;
     len = iotd->iotd_Req.io_Length;
-    //uint32_t offset2 = iostd->io_Offset;
 
-    max_addr = 0xffffffff;
-
-    // well... if we had 64 bits this would make sense
-    if ((offset > max_addr) || (offset+len > max_addr))
+    if (data == 0) {
         return IOERR_BADADDRESS;
-    if (data == 0)
-        return IOERR_BADADDRESS;
+    }
     if (len < PISCSI_BLOCK_SIZE) {
         iostd->io_Actual = 0;
         return IOERR_BADLENGTH;
     }
 
-    //block = offset;// >> SD_SECTOR_SHIFT;
-    //num_blocks = len;// >> SD_SECTOR_SHIFT;
-    sderr = 0;
-
-    if (write) {
-        WRITELONG(PISCSI_CMD_ADDR1, (offset >> 9));
-        WRITELONG(PISCSI_CMD_ADDR2, len);
-        WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
-        WRITESHORT(PISCSI_CMD_WRITE, u->unit_num);
-    } else {
-        WRITELONG(PISCSI_CMD_ADDR1, (offset >> 9));
-        WRITELONG(PISCSI_CMD_ADDR2, len);
-        WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
-        WRITESHORT(PISCSI_CMD_READ, u->unit_num);
+    switch (io->io_Command) {
+        case TD_WRITE64:
+        case NSCMD_TD_WRITE64:
+        case TD_FORMAT64:
+        case NSCMD_TD_FORMAT64:
+            WRITELONG(PISCSI_CMD_ADDR1, iostd->io_Offset);
+            WRITELONG(PISCSI_CMD_ADDR2, len);
+            WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
+            WRITELONG(PISCSI_CMD_ADDR4, iostd->io_Actual);
+            WRITESHORT(PISCSI_CMD_WRITE64, u->unit_num);
+            break;
+        case TD_READ64:
+        case NSCMD_TD_READ64:
+            WRITELONG(PISCSI_CMD_ADDR1, iostd->io_Offset);
+            WRITELONG(PISCSI_CMD_ADDR2, len);
+            WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
+            WRITELONG(PISCSI_CMD_ADDR4, iostd->io_Actual);
+            WRITESHORT(PISCSI_CMD_READ64, u->unit_num);
+            break;
+        case TD_FORMAT:
+        case CMD_WRITE:
+            WRITELONG(PISCSI_CMD_ADDR1, (iostd->io_Offset >> 9));
+            WRITELONG(PISCSI_CMD_ADDR2, len);
+            WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
+            WRITESHORT(PISCSI_CMD_WRITE, u->unit_num);
+            break;
+        case CMD_READ:
+            WRITELONG(PISCSI_CMD_ADDR1, (iostd->io_Offset >> 9));
+            WRITELONG(PISCSI_CMD_ADDR2, len);
+            WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
+            WRITESHORT(PISCSI_CMD_READ, u->unit_num);
+            break;
     }
 
     if (sderr) {
@@ -262,7 +277,7 @@ uint8_t piscsi_rw(struct piscsi_unit *u, struct IORequest *io, uint32_t offset, 
 
         return TDERR_SeekError;
     } else {
-        iostd->io_Actual = len;
+        iostd->io_Actual = iotd->iotd_Req.io_Length;
     }
 
     return 0;
@@ -276,7 +291,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
     struct SCSICmd *scsi = iostd->io_Data;
     //uint8_t* registers = sdu->sdu_Registers;
     uint8_t *data = (uint8_t *)scsi->scsi_Data;
-    uint32_t i, block, blocks, maxblocks;
+    uint32_t i, block = 0, blocks = 0, maxblocks = 0;
     uint8_t err = 0;
 
     debugval(PISCSI_DBG_VAL1, iostd->io_Length);
@@ -339,13 +354,28 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
         
         case 0x08: // READ (6)
         case 0x0a: // WRITE (6)
-            block = scsi->scsi_Command[1] & 0x1f;
-            block = (block << 8) | scsi->scsi_Command[2];
-            block = (block << 8) | scsi->scsi_Command[3];
-            blocks = scsi->scsi_Command[4];
+        case 0x28: // READ (10)
+        case 0x2A: // WRITE (10)
+            switch (scsi->scsi_Command[0]) {
+                case 0x08: case 0x0A:
+                    block = scsi->scsi_Command[1] & 0x1f;
+                    block = (block << 8) | scsi->scsi_Command[2];
+                    block = (block << 8) | scsi->scsi_Command[3];
+                    blocks = scsi->scsi_Command[4];
+                    break;
+                case 0x28: case 0x2A:
+                    block = scsi->scsi_Command[2];
+                    block = (block << 8) | scsi->scsi_Command[3];
+                    block = (block << 8) | scsi->scsi_Command[4];
+                    block = (block << 8) | scsi->scsi_Command[5];
+
+                    blocks = scsi->scsi_Command[7];
+                    blocks = (blocks << 8) | scsi->scsi_Command[8];
+                    break;
+            }
 
             READLONG(PISCSI_CMD_BLOCKS, maxblocks);
-            if (block + blocks > maxblocks) {
+            if (block + blocks > maxblocks || blocks == 0) {
                 err = IOERR_BADADDRESS;
                 break;
             }
@@ -457,7 +487,8 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
             break;
         
         case 0x37: // READ DEFECT DATA (10)
-            
+            break;
+        case 0x40: // CHANGE DEFINITION
             break;
 
         default:
@@ -476,6 +507,35 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
     return err;
 }
 
+uint16_t ns_support[] = {
+    NSCMD_DEVICEQUERY,
+  	CMD_RESET,
+	CMD_READ,
+	CMD_WRITE,
+	CMD_UPDATE,
+	CMD_CLEAR,
+	CMD_START,
+	CMD_STOP,
+	CMD_FLUSH,
+	TD_MOTOR,
+	TD_SEEK,
+	TD_FORMAT,
+	TD_REMOVE,
+	TD_CHANGENUM,
+	TD_CHANGESTATE,
+	TD_PROTSTATUS,
+	TD_GETDRIVETYPE,
+	TD_GETGEOMETRY,
+	TD_ADDCHANGEINT,
+	TD_REMCHANGEINT,
+	HD_SCSICMD,
+	NSCMD_TD_READ64,
+	NSCMD_TD_WRITE64,
+	NSCMD_TD_SEEK64,
+	NSCMD_TD_FORMAT64,
+	0,
+};
+
 #define DUMMYCMD iostd->io_Actual = 0; break;
 uint8_t piscsi_perform_io(struct piscsi_unit *u, struct IORequest *io) {
     struct IOStdReq *iostd = (struct IOStdReq *)io;
@@ -483,7 +543,7 @@ uint8_t piscsi_perform_io(struct piscsi_unit *u, struct IORequest *io) {
 
     //uint8_t *data;
     //uint32_t len;
-    uint32_t offset;
+    //uint32_t offset;
     //struct DriveGeometry *geom;
     uint8_t err = 0;
 
@@ -504,6 +564,18 @@ uint8_t piscsi_perform_io(struct piscsi_unit *u, struct IORequest *io) {
     debug(PISCSI_DBG_MSG, DBG_IOCMD);
 
     switch (io->io_Command) {
+        case NSCMD_DEVICEQUERY: {
+            struct NSDeviceQueryResult *res = (struct NSDeviceQueryResult *)iotd->iotd_Req.io_Data;
+            res->DevQueryFormat = 0;
+            res->SizeAvailable = 16;;
+            res->DeviceType = NSDEVTYPE_TRACKDISK;
+            res->DeviceSubType = 0;
+            res->SupportedCommands = ns_support;
+
+            iostd->io_Actual = 16;
+            return 0;
+            break;
+        }
         case CMD_CLEAR:
             /* Invalidate read buffer */
             DUMMYCMD;
@@ -528,19 +600,15 @@ uint8_t piscsi_perform_io(struct piscsi_unit *u, struct IORequest *io) {
             break;
 
         case TD_FORMAT:
-            offset = iotd->iotd_Req.io_Offset;
-            //err = 0;
-            err = piscsi_rw(u, io, offset, 1);
-            break;
+        case TD_FORMAT64:
+        case NSCMD_TD_FORMAT64:
+        case TD_READ64:
+        case NSCMD_TD_READ64:
+        case TD_WRITE64:
+        case NSCMD_TD_WRITE64:
         case CMD_WRITE:
-            offset = iotd->iotd_Req.io_Offset;
-            //err = 0;
-            err = piscsi_rw(u, io, offset, 1);
-            break;
         case CMD_READ:
-            offset = iotd->iotd_Req.io_Offset;
-            //err = 0;
-            err = piscsi_rw(u, io, offset, 0);
+            err = piscsi_rw(u, io);
             break;
         case HD_SCSICMD:
             //err = 0;

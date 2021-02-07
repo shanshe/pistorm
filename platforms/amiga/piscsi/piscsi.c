@@ -11,7 +11,7 @@
 #include "../../../gpio/ps_protocol.h"
 
 // Comment this line to restore debug output:
-#define printf(...)
+//#define printf(...)
 
 struct piscsi_dev devs[8];
 uint8_t piscsi_cur_drive = 0;
@@ -100,22 +100,22 @@ void piscsi_unmap_drive(uint8_t index) {
 #define CMD_FLUSH	8
 #define CMD_NONSTD	9
 
-#define	TD_MOTOR	(CMD_NONSTD+0)
-#define	TD_SEEK		(CMD_NONSTD+1)
-#define	TD_FORMAT	(CMD_NONSTD+2)
-#define	TD_REMOVE	(CMD_NONSTD+3)
-#define	TD_CHANGENUM	(CMD_NONSTD+4)
-#define	TD_CHANGESTATE	(CMD_NONSTD+5)
-#define	TD_PROTSTATUS	(CMD_NONSTD+6)
-#define	TD_RAWREAD	(CMD_NONSTD+7)
-#define	TD_RAWWRITE	(CMD_NONSTD+8)
-#define	TD_GETDRIVETYPE	(CMD_NONSTD+9)
-#define	TD_GETNUMTRACKS	(CMD_NONSTD+10)
-#define	TD_ADDCHANGEINT	(CMD_NONSTD+11)
-#define	TD_REMCHANGEINT	(CMD_NONSTD+12)
-#define TD_GETGEOMETRY	(CMD_NONSTD+13)
-#define TD_EJECT	(CMD_NONSTD+14)
-#define	TD_LASTCOMM	(CMD_NONSTD+15)
+#define	TD_MOTOR	(CMD_NONSTD+0)      // 9
+#define	TD_SEEK		(CMD_NONSTD+1)      // 10
+#define	TD_FORMAT	(CMD_NONSTD+2)      // 11
+#define	TD_REMOVE	(CMD_NONSTD+3)      // 12
+#define	TD_CHANGENUM	(CMD_NONSTD+4)  // 13
+#define	TD_CHANGESTATE	(CMD_NONSTD+5)  // 15
+#define	TD_PROTSTATUS	(CMD_NONSTD+6)  // 16
+#define	TD_RAWREAD	(CMD_NONSTD+7)      // 17
+#define	TD_RAWWRITE	(CMD_NONSTD+8)      // 18
+#define	TD_GETDRIVETYPE	(CMD_NONSTD+9)  // 19
+#define	TD_GETNUMTRACKS	(CMD_NONSTD+10) // 20
+#define	TD_ADDCHANGEINT	(CMD_NONSTD+11) // 21
+#define	TD_REMCHANGEINT	(CMD_NONSTD+12) // 22
+#define TD_GETGEOMETRY	(CMD_NONSTD+13) // 23
+#define TD_EJECT	(CMD_NONSTD+14)     // 24
+#define	TD_LASTCOMM	(CMD_NONSTD+15)     // 25
 
 #define	ETD_WRITE	(CMD_WRITE|TDF_EXTCOM)
 #define	ETD_READ	(CMD_READ|TDF_EXTCOM)
@@ -128,6 +128,12 @@ void piscsi_unmap_drive(uint8_t index) {
 #define	ETD_RAWWRITE	(TD_RAWWRITE|TDF_EXTCOM)
 
 #define HD_SCSICMD 28
+
+#define NSCMD_DEVICEQUERY 0x4000
+#define NSCMD_TD_READ64   0xC000
+#define NSCMD_TD_WRITE64  0xC001
+#define NSCMD_TD_SEEK64   0xC002
+#define NSCMD_TD_FORMAT64 0xC003
 
 char *io_cmd_name(int index) {
     switch (index) {
@@ -155,8 +161,14 @@ char *io_cmd_name(int index) {
         case TD_REMCHANGEINT: return "REMCHANGEINT";
         case TD_GETGEOMETRY: return "GETGEOMETRY";
         case TD_EJECT: return "EJECT";
-        case TD_LASTCOMM: return "LASTCOMM";
+        case TD_LASTCOMM: return "LASTCOMM/READ64";
+        case TD_WRITE64: return "WRITE64";
         case HD_SCSICMD: return "HD_SCSICMD";
+        case NSCMD_DEVICEQUERY: return "NSCMD_DEVICEQUERY";
+        case NSCMD_TD_READ64: return "NSCMD_TD_READ64";
+        case NSCMD_TD_WRITE64: return "NSCMD_TD_WRITE64";
+        case NSCMD_TD_FORMAT64: return "NSCMD_TD_FORMAT64";
+
         default:
             return "!!!Unhandled IO command";
     }
@@ -166,8 +178,10 @@ char *scsi_cmd_name(int index) {
     switch(index) {
         case 0x00: return "TEST UNIT READY";
         case 0x12: return "INQUIRY";
-        case 0x08: return "READ";
-        case 0x0A: return "WRITE";
+        case 0x08: return "READ (6)";
+        case 0x0A: return "WRITE (6)";
+        case 0x28: return "READ (10)";
+        case 0x2A: return "WRITE (10)";
         case 0x25: return "READ CAPACITY";
         case 0x1A: return "MODE SENSE";
         case 0x37: return "READ DEFECT DATA";
@@ -213,67 +227,91 @@ void print_piscsi_debug_message(int index) {
             printf("[PISCSI] IO Command %d (%s)\n", piscsi_dbg[0], io_cmd_name(piscsi_dbg[0]));
             break;
         case DBG_IOCMD_UNHANDLED:
-            printf("[PISCSI] WARN: IO command %d (%s) is unhandled by driver.\n", piscsi_dbg[0], io_cmd_name(piscsi_dbg[0]));
+            printf("[PISCSI] WARN: IO command %.4X (%s) is unhandled by driver.\n", piscsi_dbg[0], io_cmd_name(piscsi_dbg[0]));
     }
 }
 
 extern struct emulator_config *cfg;
 extern void stop_cpu_emulation(uint8_t disasm_cur);
 
+#ifdef FAKESTORM
+#define lseek64 lseek
+#endif
+
 void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
     int32_t r;
 
     struct piscsi_dev *d = &devs[piscsi_cur_drive];
 
-    switch (addr & 0xFFFF) {
+    uint16_t cmd = (addr & 0xFFFF);
+
+    switch (cmd) {
+        case PISCSI_CMD_READ64:
         case PISCSI_CMD_READ:
             d = &devs[val];
             if (d->fd == -1) {
                 printf ("[PISCSI] BUG: Attempted read from unmapped drive %d.\n", piscsi_cur_drive);
                 break;
             }
-            printf("[PISCSI] %d byte READ from block %d to address %.8X\n", piscsi_u32[1], piscsi_u32[0], piscsi_u32[2]);
-            d->lba = piscsi_u32[0];
+
+            if (cmd == PISCSI_CMD_READ) {
+                printf("[PISCSI] %d byte READ from block %d to address %.8X\n", piscsi_u32[1], piscsi_u32[0], piscsi_u32[2]);
+                d->lba = piscsi_u32[0];
+                lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
+            }
+            else {
+                uint64_t src = piscsi_u32[3];
+                src = (src << 32) | piscsi_u32[0];
+                printf("[PISCSI] %d byte READ64 from block %lld to address %.8X\n", piscsi_u32[1], (src / 512), piscsi_u32[2]);
+                d->lba = (src / 512);
+                lseek64(d->fd, src, SEEK_SET);
+            }
+
             r = get_mapped_item_by_address(cfg, piscsi_u32[2]);
             if (r != -1 && cfg->map_type[r] == MAPTYPE_RAM) {
                 printf("[PISCSI] \"DMA\" Read goes to mapped range %d.\n", r);
-                lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
                 read(d->fd, cfg->map_data[r] + piscsi_u32[2] - cfg->map_offset[r], piscsi_u32[1]);
             }
             else {
                 printf("[PISCSI] No mapped range found for read.\n");
                 uint8_t c = 0;
-                lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
-                for (uint32_t i = 0; i < piscsi_u32[1]; i++) {
+                for (int i = 0; i < piscsi_u32[1]; i++) {
                     read(d->fd, &c, 1);
-#ifndef FAKESTORM
                     write8(piscsi_u32[2] + i, (uint32_t)c);
-#endif
                 }
             }
             break;
+        case PISCSI_CMD_WRITE64:
         case PISCSI_CMD_WRITE:
             d = &devs[val];
             if (d->fd == -1) {
                 printf ("[PISCSI] BUG: Attempted write to unmapped drive %d.\n", piscsi_cur_drive);
                 break;
             }
-            d->lba = piscsi_u32[0];
-            printf("[PISCSI] %d byte WRITE to block %d from address %.8X\n", piscsi_u32[1], piscsi_u32[0], piscsi_u32[2]);
+
+            if (cmd == PISCSI_CMD_READ) {
+                printf("[PISCSI] %d byte WRITE to block %d from address %.8X\n", piscsi_u32[1], piscsi_u32[0], piscsi_u32[2]);
+                d->lba = piscsi_u32[0];
+                lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
+            }
+            else {
+                uint64_t src = piscsi_u32[3];
+                src = (src << 32) | piscsi_u32[0];
+                printf("[PISCSI] %d byte WRITE64 to block %lld from address %.8X\n", piscsi_u32[1], (src / 512), piscsi_u32[2]);
+                d->lba = (src / 512);
+                lseek64(d->fd, src, SEEK_SET);
+            }
+
             r = get_mapped_item_by_address(cfg, piscsi_u32[2]);
             if (r != -1) {
                 printf("[PISCSI] \"DMA\" Write comes from mapped range %d.\n", r);
-                lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
                 write(d->fd, cfg->map_data[r] + piscsi_u32[2] - cfg->map_offset[r], piscsi_u32[1]);
             }
             else {
                 printf("[PISCSI] No mapped range found for write.\n");
                 uint8_t c = 0;
-                lseek(d->fd, (piscsi_u32[0] * 512), SEEK_SET);
-                for (uint32_t i = 0; i < piscsi_u32[1]; i++) {
-#ifndef FAKESTORM
+                for (int i = 0; i < piscsi_u32[1]; i++) {
                     c = read8(piscsi_u32[2] + i);
-#endif
                     write(d->fd, &c, 1);
                 }
             }
