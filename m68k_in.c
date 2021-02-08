@@ -8407,7 +8407,8 @@ M68KMAKE_OP(pflusha, 32, ., .)
 {
 	if (HAS_PMMU)
 	{
-		fprintf(stderr,"68040: unhandled PFLUSHA (ir=%04x)\n", REG_IR);
+//		fprintf(stderr,"68040: unhandled PFLUSHA (ir=%04x)\n", REG_IR);
+		m68851_mmu_ops();
 		return;
 	}
 	m68ki_exception_1111();
@@ -8417,7 +8418,8 @@ M68KMAKE_OP(pflushan, 32, ., .)
 {
 	if (HAS_PMMU)
 	{
-		fprintf(stderr,"68040: unhandled PFLUSHAN (ir=%04x)\n", REG_IR);
+//		fprintf(stderr,"68040: unhandled PFLUSHAN (ir=%04x)\n", REG_IR);
+		m68851_mmu_ops();
 		return;
 	}
 	m68ki_exception_1111();
