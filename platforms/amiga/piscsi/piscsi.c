@@ -10,8 +10,12 @@
 #include "../../../config_file/config_file.h"
 #include "../../../gpio/ps_protocol.h"
 
-// Comment this line to restore debug output:
-//#define printf(...)
+// Uncomment this line to restore debug output:
+//#define DEBUG_PISCSI
+
+#ifndef DEBUG_PISCSI
+#define printf(...)
+#endif
 
 struct piscsi_dev devs[8];
 uint8_t piscsi_cur_drive = 0;
@@ -22,12 +26,14 @@ uint8_t *piscsi_rom_ptr;
 
 extern unsigned char ac_piscsi_rom[];
 
+#ifdef DEBUG_PISCSI
 static const char *op_type_names[4] = {
     "BYTE",
     "WORD",
     "LONGWORD",
     "MEM",
 };
+#endif
 
 void piscsi_init() {
     for (int i = 0; i < 8; i++) {
@@ -240,7 +246,9 @@ extern void stop_cpu_emulation(uint8_t disasm_cur);
 
 void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
     int32_t r;
-
+#ifndef DEBUG_PISCSI
+    (void)type;
+#endif
     struct piscsi_dev *d = &devs[piscsi_cur_drive];
 
     uint16_t cmd = (addr & 0xFFFF);
