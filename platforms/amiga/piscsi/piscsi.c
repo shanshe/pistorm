@@ -7,6 +7,7 @@
 #include <endian.h>
 #include "piscsi.h"
 #include "piscsi-enums.h"
+#include "../hunk-reloc.h"
 #include "../../../config_file/config_file.h"
 #include "../../../gpio/ps_protocol.h"
 
@@ -35,6 +36,9 @@ static const char *op_type_names[4] = {
 };
 #endif
 
+struct hunk_info piscsi_hinfo;
+struct hunk_reloc piscsi_hreloc[256];
+
 void piscsi_init() {
     for (int i = 0; i < 8; i++) {
         devs[i].fd = -1;
@@ -45,6 +49,7 @@ void piscsi_init() {
     FILE *in = fopen("./platforms/amiga/piscsi/piscsi.rom", "rb");
     if (in == NULL) {
         printf("[PISCSI] Could not open PISCSI Boot ROM file for reading.\n");
+        // Zero out the boot ROM offset from the autoconfig ROM.
         ac_piscsi_rom[20] = 0;
         ac_piscsi_rom[21] = 0;
         ac_piscsi_rom[22] = 0;
@@ -56,6 +61,13 @@ void piscsi_init() {
     fseek(in, 0, SEEK_SET);
     piscsi_rom_ptr = malloc(piscsi_rom_size);
     fread(piscsi_rom_ptr, piscsi_rom_size, 1, in);
+    fclose(in);
+
+    // Parse the hunks in the device driver to find relocation offsets
+    in = fopen("./platforms/amiga/piscsi/device_driver_amiga/pi-scsi.device", "rb");
+    fseek(in, 0x0, SEEK_SET);
+    process_hunks(in, &piscsi_hinfo, piscsi_hreloc);
+
     fclose(in);
     printf("[PISCSI] Loaded Boot ROM.\n");
 }
@@ -283,7 +295,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             else {
                 printf("[PISCSI] No mapped range found for read.\n");
                 uint8_t c = 0;
-                for (unsigned int i = 0; i < piscsi_u32[1]; i++) {
+                for (uint32_t i = 0; i < piscsi_u32[1]; i++) {
                     read(d->fd, &c, 1);
                     write8(piscsi_u32[2] + i, (uint32_t)c);
                 }
@@ -318,7 +330,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             else {
                 printf("[PISCSI] No mapped range found for write.\n");
                 uint8_t c = 0;
-                for (unsigned int i = 0; i < piscsi_u32[1]; i++) {
+                for (uint32_t i = 0; i < piscsi_u32[1]; i++) {
                     c = read8(piscsi_u32[2] + i);
                     write(d->fd, &c, 1);
                 }
@@ -351,33 +363,13 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
             int r = get_mapped_item_by_address(cfg, val);
             if (r != -1) {
                 uint32_t addr = val - cfg->map_offset[r];
-                uint32_t rt_offs = 0;
                 uint8_t *dst_data = cfg->map_data[r];
                 memcpy(dst_data + addr, piscsi_rom_ptr + 0x400, 0x3C00);
+
+                piscsi_hinfo.base_offset = val;
                 
-                uint32_t base_offs = be32toh(*((uint32_t *)&dst_data[addr + 0x170])) + 2;
-                rt_offs = val + 0x16E;
-                printf ("Offset 1: %.8X -> %.8X\n", base_offs, rt_offs);
-                *((uint32_t *)&dst_data[addr + 0x170]) = htobe32(rt_offs);
-
-                uint32_t offs = be32toh(*((uint32_t *)&dst_data[addr + 0x174]));
-                printf ("Offset 2: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
-                *((uint32_t *)&dst_data[addr + 0x174]) = htobe32((offs - base_offs) + rt_offs);
-
-                dst_data[addr + 0x178] |= 0x07;
-
-                offs = be32toh(*((uint32_t *)&dst_data[addr + 0x17C]));
-                printf ("Offset 3: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
-                *((uint32_t *)&dst_data[addr + 0x17C]) = htobe32((offs - base_offs) + rt_offs);
-
-                offs = be32toh(*((uint32_t *)&dst_data[addr + 0x180]));
-                printf ("Offset 4: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
-                *((uint32_t *)&dst_data[addr + 0x180]) = htobe32((offs - base_offs) + rt_offs);
-
-                offs = be32toh(*((uint32_t *)&dst_data[addr + 0x184]));
-                printf ("Offset 5: %.8X -> %.8X\n", offs, (offs - base_offs) + rt_offs);
-                *((uint32_t *)&dst_data[addr + 0x184]) = htobe32((offs - base_offs) + rt_offs);
-
+                reloc_hunks(piscsi_hreloc, dst_data + addr, &piscsi_hinfo);
+                stop_cpu_emulation(1);
             }
             else {
                 for (int i = 0; i < 0x3C00; i++) {

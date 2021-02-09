@@ -12,6 +12,7 @@ MAINFILES        = emulator.c \
 	platforms/dummy/dummy-platform.c \
 	platforms/dummy/dummy-registers.c \
 	platforms/amiga/Gayle.c \
+	platforms/amiga/hunk-reloc.c \
 	platforms/amiga/gayle-ide/ide.c \
 	platforms/amiga/cdtv-dmac.c \
 	platforms/amiga/rtg/rtg.c \

@@ -3618,14 +3618,14 @@ M68KMAKE_OP(chk2cmp2, 8, ., pcdi)
 		sint lower_bound = m68ki_read_pcrel_8(ea);
 		sint upper_bound = m68ki_read_pcrel_8(ea + 1);
 
-	// for signed compare, the arithmetically smaller value is the lower bound
-	if (lower_bound & 0x80) {
-		lower_bound = (int32)(int8)lower_bound;
-		upper_bound = (int32)(int8)upper_bound;
+		// for signed compare, the arithmetically smaller value is the lower bound
+		if (lower_bound & 0x80) {
+			lower_bound = (int32)(int8)lower_bound;
+			upper_bound = (int32)(int8)upper_bound;
 
-		if(!BIT_F(word2))
-			compare = (int32)(int8)compare;
-	}
+			if(!BIT_F(word2))
+				compare = (int32)(int8)compare;
+		}
 
 		FLAG_C = (compare >= lower_bound && compare <= upper_bound) ? CFLAG_CLEAR : CFLAG_SET;
 		FLAG_Z = ((upper_bound == compare) || (lower_bound == compare)) ? 0 : 1;

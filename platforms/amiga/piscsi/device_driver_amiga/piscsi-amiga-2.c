@@ -134,7 +134,9 @@ static struct Library __attribute__((used)) *init_device(uint8_t *seg_list asm("
 static uint8_t* __attribute__((used)) expunge(struct Library *dev asm("a6"))
 {
     debug(PISCSI_DBG_MSG, DBG_CLEANUP);
-    FreeMem(dev_base, sizeof(struct piscsi_base));
+    /*if (dev_base->open_count)
+        return 0;
+    FreeMem(dev_base, sizeof(struct piscsi_base));*/
     return 0;
 }
 
@@ -164,10 +166,12 @@ static void __attribute__((used)) open(struct Library *dev asm("a6"), struct IOE
     }
 
     iotd->iotd_Req.io_Error = io_err;
+    //dev_base->open_count++;
 }
 
 static uint8_t* __attribute__((used)) close(struct Library *dev asm("a6"), struct IOExtTD *iotd asm("a1"))
 {
+    //dev_base->open_count--;
     return 0;
 }
 
