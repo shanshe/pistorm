@@ -113,14 +113,14 @@ int process_hunk(uint32_t index, struct hunk_info *info, FILE *f, struct hunk_re
             break;
         case HUNKTYPE_BSS:
             DEBUG("Hunk %d: BSS.\n", info->current_hunk);
-            info->hunk_offsets[info->current_hunk] = ftell(f);
             READLW(discard, f);
+            info->hunk_offsets[info->current_hunk] = ftell(f);
             DEBUG("Skipping BSS hunk. Size: %d\n", discard * 4);
             return 0;
         case HUNKTYPE_DATA:
             DEBUG("Hunk %d: DATA.\n", info->current_hunk);
-            info->hunk_offsets[info->current_hunk] = ftell(f);
             READLW(discard, f);
+            info->hunk_offsets[info->current_hunk] = ftell(f);
             DEBUG("Skipping data hunk. Size: %d.\n", discard * 4);
             fseek(f, discard * 4, SEEK_CUR);
             return 0;
