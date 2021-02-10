@@ -8456,7 +8456,7 @@ M68KMAKE_OP(pack, 16, mm, ax7)
 		ea_src = EA_AY_PD_8();
 		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
 
-		m68ki_write_8(EA_A7_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
+		m68ki_write_8(EA_A7_PD_8(), ((src >> 8) & 0x000f) | ((src<<4) & 0x00f0));
 		return;
 	}
 	m68ki_exception_illegal();
@@ -8471,7 +8471,7 @@ M68KMAKE_OP(pack, 16, mm, ay7)
 		uint ea_src = EA_A7_PD_8();
 		uint src = m68ki_read_8(ea_src);
 		ea_src = EA_A7_PD_8();
-		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
+		src = (src | (m68ki_read_8(ea_src) << 8)) + OPER_I_16();
 
 		m68ki_write_8(EA_AX_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
 		return;
@@ -8487,7 +8487,7 @@ M68KMAKE_OP(pack, 16, mm, axy7)
 		uint ea_src = EA_A7_PD_8();
 		uint src = m68ki_read_8(ea_src);
 		ea_src = EA_A7_PD_8();
-		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
+		src = (src | (m68ki_read_8(ea_src) << 8)) + OPER_I_16();
 
 		m68ki_write_8(EA_A7_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
 		return;
@@ -8504,7 +8504,7 @@ M68KMAKE_OP(pack, 16, mm, .)
 		uint ea_src = EA_AY_PD_8();
 		uint src = m68ki_read_8(ea_src);
 		ea_src = EA_AY_PD_8();
-		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
+		src = (src | (m68ki_read_8(ea_src) << 8)) + OPER_I_16();
 
 		m68ki_write_8(EA_AX_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
 		return;
@@ -9395,26 +9395,23 @@ M68KMAKE_OP(rte, 32, ., .)
 				new_sr = m68ki_pull_16();
 				new_pc = m68ki_pull_32();
 				m68ki_fake_pull_16();	/* format word */
-				m68ki_fake_pull_16();	/* special status word */
-				m68ki_fake_pull_32();	/* fault address */
-				m68ki_fake_pull_16();	/* unused/reserved */
-				m68ki_fake_pull_16();	/* data output buffer */
-				m68ki_fake_pull_16();	/* unused/reserved */
-				m68ki_fake_pull_16();	/* data input buffer */
-				m68ki_fake_pull_16();	/* unused/reserved */
-				m68ki_fake_pull_16();	/* instruction input buffer */
-				m68ki_fake_pull_32();	/* internal information, 16 words */
-				m68ki_fake_pull_32();	/* (actually, we use 8 DWORDs) */
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
 				m68ki_jump(new_pc);
 				m68ki_set_sr(new_sr);
 				CPU_INSTR_MODE = INSTRUCTION_YES;
 				CPU_RUN_MODE = RUN_MODE_NORMAL;
+				m68ki_fake_pull_16();  /* special status */
+				m68ki_fake_pull_32();	/* fault address */
+				m68ki_fake_pull_32();  /* reserved and data output buffer */
+				m68ki_fake_pull_32();  /* reserved and data input buffer */
+				m68ki_fake_pull_32();  /* reserved and instruction input buffer */
+				m68ki_fake_pull_32();  /* 8 dwords of CPU specific undocumented data */
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
 				return;
 			}
 			CPU_INSTR_MODE = INSTRUCTION_YES;
@@ -10840,9 +10837,9 @@ M68KMAKE_OP(unpk, 16, mm, ax7)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_A7_PD_8();
-		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
-		ea_dst = EA_A7_PD_8();
 		m68ki_write_8(ea_dst, src & 0xff);
+		ea_dst = EA_A7_PD_8();
+		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
@@ -10859,9 +10856,9 @@ M68KMAKE_OP(unpk, 16, mm, ay7)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_AX_PD_8();
-		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
-		ea_dst = EA_AX_PD_8();
 		m68ki_write_8(ea_dst, src & 0xff);
+		ea_dst = EA_AX_PD_8();
+		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
@@ -10877,9 +10874,9 @@ M68KMAKE_OP(unpk, 16, mm, axy7)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_A7_PD_8();
-		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
-		ea_dst = EA_A7_PD_8();
 		m68ki_write_8(ea_dst, src & 0xff);
+		ea_dst = EA_A7_PD_8();
+		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
@@ -10896,9 +10893,9 @@ M68KMAKE_OP(unpk, 16, mm, .)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_AX_PD_8();
-		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
-		ea_dst = EA_AX_PD_8();
 		m68ki_write_8(ea_dst, src & 0xff);
+		ea_dst = EA_AX_PD_8();
+		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
