@@ -560,6 +560,7 @@ cpdbcc    32  .     .     1111...001001...  ..........  . . U U .   .   .   4   
 cpgen     32  .     .     1111...000......  ..........  . . U U .   .   .   4   4   .  unemulated
 cpscc     32  .     .     1111...001......  ..........  . . U U .   .   .   4   4   .  unemulated
 cptrapcc  32  .     .     1111...001111...  ..........  . . U U .   .   .   4   4   .  unemulated
+ftrapcc   32  .     .     1111001001111...  ..........  . . U U .   .   .   4   4   .
 dbt       16  .     .     0101000011001...  ..........  U U U U U  12  12   6   6   6
 dbf       16  .     .     0101000111001...  ..........  U U U U U  12  12   6   6   6
 dbcc      16  .     .     0101....11001...  ..........  U U U U U  12  12   6   6   6
@@ -3902,7 +3903,11 @@ M68KMAKE_OP(clr, 8, ., d)
 
 M68KMAKE_OP(clr, 8, ., .)
 {
-	m68ki_write_8(M68KMAKE_GET_EA_AY_8, 0);
+	uint32 ea = M68KMAKE_GET_EA_AY_8;
+
+	if(CPU_TYPE_IS_000(CPU_TYPE))
+		m68ki_read_8(ea);   /* the 68000 does a dummy read, the value is discarded */
+	m68ki_write_8(ea, 0);
 
 	FLAG_N = NFLAG_CLEAR;
 	FLAG_V = VFLAG_CLEAR;
@@ -3924,7 +3929,11 @@ M68KMAKE_OP(clr, 16, ., d)
 
 M68KMAKE_OP(clr, 16, ., .)
 {
-	m68ki_write_16(M68KMAKE_GET_EA_AY_16, 0);
+	uint32 ea = M68KMAKE_GET_EA_AY_16;
+
+	if(CPU_TYPE_IS_000(CPU_TYPE))
+		m68ki_read_16(ea);  /* the 68000 does a dummy read, the value is discarded */
+	m68ki_write_16(ea, 0);
 
 	FLAG_N = NFLAG_CLEAR;
 	FLAG_V = VFLAG_CLEAR;
@@ -3946,7 +3955,11 @@ M68KMAKE_OP(clr, 32, ., d)
 
 M68KMAKE_OP(clr, 32, ., .)
 {
-	m68ki_write_32(M68KMAKE_GET_EA_AY_32, 0);
+	uint32 ea = M68KMAKE_GET_EA_AY_32;
+
+	if(CPU_TYPE_IS_000(CPU_TYPE))
+		m68ki_read_32(ea);  /* the 68000 does a dummy read, the value is discarded */
+	m68ki_write_32(ea, 0);
 
 	FLAG_N = NFLAG_CLEAR;
 	FLAG_V = VFLAG_CLEAR;
@@ -4430,6 +4443,8 @@ M68KMAKE_OP(cpdbcc, 32, ., .)
 
 M68KMAKE_OP(cpgen, 32, ., .)
 {
+// TODO: what's the condition?
+//	if(HAS_FPU || HAS_PMMU)
 	if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
 	{
 		M68K_DO_LOG((M68K_LOG_FILEHANDLE "%s at %08x: called unimplemented instruction %04x (%s)\n",
@@ -4468,6 +4483,15 @@ M68KMAKE_OP(cptrapcc, 32, ., .)
 	m68ki_exception_1111();
 }
 
+M68KMAKE_OP(ftrapcc,32, ., .)
+{
+	if(HAS_FPU)
+	{
+		m68881_ftrap();
+	} else {
+		m68ki_exception_1111();
+	}
+}
 
 M68KMAKE_OP(dbt, 16, ., .)
 {
@@ -4529,12 +4553,12 @@ M68KMAKE_OP(divs, 16, ., d)
 
 	if(src != 0)
 	{
+		FLAG_C = CFLAG_CLEAR;
 		if((uint32)*r_dst == 0x80000000 && src == -1)
 		{
 			FLAG_Z = 0;
 			FLAG_N = NFLAG_CLEAR;
 			FLAG_V = VFLAG_CLEAR;
-			FLAG_C = CFLAG_CLEAR;
 			*r_dst = 0;
 			return;
 		}
@@ -4547,7 +4571,6 @@ M68KMAKE_OP(divs, 16, ., d)
 			FLAG_Z = quotient;
 			FLAG_N = NFLAG_16(quotient);
 			FLAG_V = VFLAG_CLEAR;
-			FLAG_C = CFLAG_CLEAR;
 			*r_dst = MASK_OUT_ABOVE_32(MASK_OUT_ABOVE_16(quotient) | (remainder << 16));
 			return;
 		}
@@ -4567,12 +4590,12 @@ M68KMAKE_OP(divs, 16, ., .)
 
 	if(src != 0)
 	{
+		FLAG_C = CFLAG_CLEAR;
 		if((uint32)*r_dst == 0x80000000 && src == -1)
 		{
 			FLAG_Z = 0;
 			FLAG_N = NFLAG_CLEAR;
 			FLAG_V = VFLAG_CLEAR;
-			FLAG_C = CFLAG_CLEAR;
 			*r_dst = 0;
 			return;
 		}
@@ -4585,7 +4608,6 @@ M68KMAKE_OP(divs, 16, ., .)
 			FLAG_Z = quotient;
 			FLAG_N = NFLAG_16(quotient);
 			FLAG_V = VFLAG_CLEAR;
-			FLAG_C = CFLAG_CLEAR;
 			*r_dst = MASK_OUT_ABOVE_32(MASK_OUT_ABOVE_16(quotient) | (remainder << 16));
 			return;
 		}
@@ -4603,6 +4625,7 @@ M68KMAKE_OP(divu, 16, ., d)
 
 	if(src != 0)
 	{
+		FLAG_C = CFLAG_CLEAR;
 		uint quotient = *r_dst / src;
 		uint remainder = *r_dst % src;
 
@@ -4611,7 +4634,6 @@ M68KMAKE_OP(divu, 16, ., d)
 			FLAG_Z = quotient;
 			FLAG_N = NFLAG_16(quotient);
 			FLAG_V = VFLAG_CLEAR;
-			FLAG_C = CFLAG_CLEAR;
 			*r_dst = MASK_OUT_ABOVE_32(MASK_OUT_ABOVE_16(quotient) | (remainder << 16));
 			return;
 		}
@@ -4629,6 +4651,7 @@ M68KMAKE_OP(divu, 16, ., .)
 
 	if(src != 0)
 	{
+		FLAG_C = CFLAG_CLEAR;
 		uint quotient = *r_dst / src;
 		uint remainder = *r_dst % src;
 
@@ -4637,7 +4660,6 @@ M68KMAKE_OP(divu, 16, ., .)
 			FLAG_Z = quotient;
 			FLAG_N = NFLAG_16(quotient);
 			FLAG_V = VFLAG_CLEAR;
-			FLAG_C = CFLAG_CLEAR;
 			*r_dst = MASK_OUT_ABOVE_32(MASK_OUT_ABOVE_16(quotient) | (remainder << 16));
 			return;
 		}
