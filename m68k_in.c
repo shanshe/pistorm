@@ -898,8 +898,6 @@ unpk      16  mm    ax7   1000111110001...  ..........  . . U U U   .   .  13  1
 unpk      16  mm    ay7   1000...110001111  ..........  . . U U U   .   .  13  13  13
 unpk      16  mm    axy7  1000111110001111  ..........  . . U U U   .   .  13  13  13
 unpk      16  mm    .     1000...110001...  ..........  . . U U U   .   .  13  13  13
-cinv      32  .     .     11110100..0.....  ..........  . . . . S   .   .   .   .  16
-cpush     32  .     .     11110100..1.....  ..........  . . . . S   .   .   .   .  16
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 M68KMAKE_OPCODE_HANDLER_BODY
@@ -10914,42 +10912,6 @@ M68KMAKE_OP(unpk, 16, mm, .)
 		m68ki_write_8(ea_dst, src & 0xff);
 		ea_dst = EA_AX_PD_8();
 		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
-		return;
-	}
-	m68ki_exception_illegal();
-}
-
-M68KMAKE_OP(cinv, 32, ., .)
-{
-	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
-	{
-		uint16 ir = REG_IR;
-		uint8 cache = (ir >> 6) & 3;
-		uint8 scope = (ir >> 3) & 3;
-		printf("68040 cinv: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", REG_PPC, ir, cache, scope, ir & 7);
-		switch (cache) {
-		case 1:
-			// TODO: data cache
-			break;
-		case 2:
-		case 3:
-			// we invalidate/push the whole instruction cache
-			m68ki_ic_clear();
-			break;
-		default:
-			m68ki_exception_1111();
-			break;
-		}
-		return;
-	}
-	m68ki_exception_illegal();
-}
-
-M68KMAKE_OP(cpush, 32, ., .)
-{
-	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
-	{
-	printf("68040 at %08x: called unimplemented instruction %04x (cpush)\n", REG_PPC, REG_IR);
 		return;
 	}
 	m68ki_exception_illegal();
