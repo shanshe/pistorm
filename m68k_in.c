@@ -773,6 +773,7 @@ pea       32  .     .     0100100001......  A..DXWLdx.  U U U U U   6   6   5   
 pflusha   32  .     .     1111010100011...  ..........  . . . . S   .   .   .   .   4   TODO: correct timing
 pflushan  32  .     .     1111010100010...  ..........  . . . . S   .   .   .   .   4   TODO: correct timing
 pmmu      32  .     .     1111000.........  ..........  . . S S S   .   .   8   8   8
+ptest     32  .     .     1111010101.01...  ..........  . . . . S   .   .   .   .   4
 reset      0  .     .     0100111001110000  ..........  S S S S S   0   0   0   0   0
 ror        8  s     .     1110...000011...  ..........  U U U U U   6   6   8   8   8
 ror       16  s     .     1110...001011...  ..........  U U U U U   6   6   8   8   8
@@ -8552,6 +8553,23 @@ M68KMAKE_OP(pmmu, 32, ., .)
 	}
 }
 
+M68KMAKE_OP(ptest, 32, ., .)
+{
+	if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+		if(HAS_PMMU)
+		{
+			fprintf(stderr,"68040: unhandled PTEST (ir=%04x)\n", REG_IR);
+		}
+		else
+		{
+			m68ki_exception_1111();
+		}
+		return;
+	}
+	m68ki_exception_illegal();
+}
+
 M68KMAKE_OP(reset, 0, ., .)
 {
 	if(FLAG_S)
@@ -10904,6 +10922,41 @@ M68KMAKE_OP(unpk, 16, mm, .)
 	m68ki_exception_illegal();
 }
 
+M68KMAKE_OP(cinv, 32, ., .)
+{
+	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+		uint16 ir = REG_IR;
+		uint8 cache = (ir >> 6) & 3;
+		uint8 scope = (ir >> 3) & 3;
+		printf("68040 cinv: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", REG_PPC, ir, cache, scope, ir & 7);
+		switch (cache) {
+		case 1:
+			// TODO: data cache
+			break;
+		case 2:
+		case 3:
+			// we invalidate/push the whole instruction cache
+			m68ki_ic_clear();
+			break;
+		default:
+			m68ki_exception_1111();
+			break;
+		}
+		return;
+	}
+	m68ki_exception_illegal();
+}
+
+M68KMAKE_OP(cpush, 32, ., .)
+{
+	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+	printf("68040 at %08x: called unimplemented instruction %04x (cpush)\n", REG_PPC, REG_IR);
+		return;
+	}
+	m68ki_exception_illegal();
+}
 
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
