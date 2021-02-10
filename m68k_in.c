@@ -897,8 +897,6 @@ unpk      16  mm    ax7   1000111110001...  ..........  . . U U U   .   .  13  1
 unpk      16  mm    ay7   1000...110001111  ..........  . . U U U   .   .  13  13  13
 unpk      16  mm    axy7  1000111110001111  ..........  . . U U U   .   .  13  13  13
 unpk      16  mm    .     1000...110001...  ..........  . . U U U   .   .  13  13  13
-cinv      32  .     .     11110100..0.....  ..........  . . . . S   .   .   .   .  16
-cpush     32  .     .     11110100..1.....  ..........  . . . . S   .   .   .   .  16
 
 
 
@@ -9397,23 +9395,26 @@ M68KMAKE_OP(rte, 32, ., .)
 				new_sr = m68ki_pull_16();
 				new_pc = m68ki_pull_32();
 				m68ki_fake_pull_16();	/* format word */
+				m68ki_fake_pull_16();	/* special status word */
+				m68ki_fake_pull_32();	/* fault address */
+				m68ki_fake_pull_16();	/* unused/reserved */
+				m68ki_fake_pull_16();	/* data output buffer */
+				m68ki_fake_pull_16();	/* unused/reserved */
+				m68ki_fake_pull_16();	/* data input buffer */
+				m68ki_fake_pull_16();	/* unused/reserved */
+				m68ki_fake_pull_16();	/* instruction input buffer */
+				m68ki_fake_pull_32();	/* internal information, 16 words */
+				m68ki_fake_pull_32();	/* (actually, we use 8 DWORDs) */
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
+				m68ki_fake_pull_32();
 				m68ki_jump(new_pc);
 				m68ki_set_sr(new_sr);
 				CPU_INSTR_MODE = INSTRUCTION_YES;
 				CPU_RUN_MODE = RUN_MODE_NORMAL;
-				m68ki_fake_pull_16();  /* special status */
-				m68ki_fake_pull_32();	/* fault address */
-				m68ki_fake_pull_32();  /* reserved and data output buffer */
-				m68ki_fake_pull_32();  /* reserved and data input buffer */
-				m68ki_fake_pull_32();  /* reserved and instruction input buffer */
-				m68ki_fake_pull_32();  /* 8 dwords of CPU specific undocumented data */
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
-				m68ki_fake_pull_32();
 				return;
 			}
 			CPU_INSTR_MODE = INSTRUCTION_YES;
@@ -10839,9 +10840,9 @@ M68KMAKE_OP(unpk, 16, mm, ax7)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_A7_PD_8();
-		m68ki_write_8(ea_dst, src & 0xff);
-		ea_dst = EA_A7_PD_8();
 		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
+		ea_dst = EA_A7_PD_8();
+		m68ki_write_8(ea_dst, src & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
@@ -10858,9 +10859,9 @@ M68KMAKE_OP(unpk, 16, mm, ay7)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_AX_PD_8();
-		m68ki_write_8(ea_dst, src & 0xff);
-		ea_dst = EA_AX_PD_8();
 		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
+		ea_dst = EA_AX_PD_8();
+		m68ki_write_8(ea_dst, src & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
@@ -10876,9 +10877,9 @@ M68KMAKE_OP(unpk, 16, mm, axy7)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_A7_PD_8();
-		m68ki_write_8(ea_dst, src & 0xff);
-		ea_dst = EA_A7_PD_8();
 		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
+		ea_dst = EA_A7_PD_8();
+		m68ki_write_8(ea_dst, src & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
@@ -10895,49 +10896,14 @@ M68KMAKE_OP(unpk, 16, mm, .)
 
 		src = (((src << 4) & 0x0f00) | (src & 0x000f)) + OPER_I_16();
 		ea_dst = EA_AX_PD_8();
-		m68ki_write_8(ea_dst, src & 0xff);
-		ea_dst = EA_AX_PD_8();
 		m68ki_write_8(ea_dst, (src >> 8) & 0xff);
+		ea_dst = EA_AX_PD_8();
+		m68ki_write_8(ea_dst, src & 0xff);
 		return;
 	}
 	m68ki_exception_illegal();
 }
 
-M68KMAKE_OP(cinv, 32, ., .)
-{
-	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
-	{
-		uint16 ir = REG_IR;
-		uint8 cache = (ir >> 6) & 3;
-		uint8 scope = (ir >> 3) & 3;
-		printf("68040 cinv: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", REG_PPC, ir, cache, scope, ir & 7);
-		switch (cache) {
-		case 1:
-			// TODO: data cache
-			break;
-		case 2:
-		case 3:
-			// we invalidate/push the whole instruction cache
-			m68ki_ic_clear();
-			break;
-		default:
-			m68ki_exception_1111();
-			break;
-		}
-		return;
-	}
-	m68ki_exception_illegal();
-}
-
-M68KMAKE_OP(cpush, 32, ., .)
-{
-	if(CPU_TYPE_IS_040_PLUS(CPU_TYPE))
-	{
-	printf("68040 at %08x: called unimplemented instruction %04x (cpush)\n", REG_PPC, REG_IR);
-		return;
-	}
-	m68ki_exception_illegal();
-}
 
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
