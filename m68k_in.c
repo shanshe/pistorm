@@ -5347,8 +5347,6 @@ M68KMAKE_OP(jmp, 32, ., .)
 {
 	m68ki_jump(M68KMAKE_GET_EA_AY_32);
 	m68ki_trace_t0();				   /* auto-disable (see m68kcpu.h) */
-	if(REG_PC == REG_PPC)
-		USE_ALL_CYCLES();
 }
 
 
@@ -7890,19 +7888,19 @@ M68KMAKE_OP(mull, 32, ., .)
 M68KMAKE_OP(nbcd, 8, ., d)
 {
 	uint* r_dst = &DY;
-	uint dst = *r_dst;
-	uint res = MASK_OUT_ABOVE_8(0x9a - dst - XFLAG_AS_1());
+	uint dst = MASK_OUT_ABOVE_8(*r_dst);
+	uint res = - dst - XFLAG_AS_1();
 
-	if(res != 0x9a)
+	if(res != 0)
 	{
-		FLAG_V = ~res; /* Undefined V behavior */
+		FLAG_V = res; /* Undefined V behavior */
 
-		if((res & 0x0f) == 0xa)
-			res = (res & 0xf0) + 0x10;
+		if(((res|dst) & 0x0f) == 0)
+			res = (res & 0xf0) + 6;
 
-		res = MASK_OUT_ABOVE_8(res);
+		res = MASK_OUT_ABOVE_8(res + 0x9a);
 
-		FLAG_V &= res; /* Undefined V behavior part II */
+		FLAG_V &= ~res; /* Undefined V behavior part II */
 
 		*r_dst = MASK_OUT_BELOW_8(*r_dst) | res;
 
@@ -7924,18 +7922,18 @@ M68KMAKE_OP(nbcd, 8, ., .)
 {
 	uint ea = M68KMAKE_GET_EA_AY_8;
 	uint dst = m68ki_read_8(ea);
-	uint res = MASK_OUT_ABOVE_8(0x9a - dst - XFLAG_AS_1());
+	uint res = - dst - XFLAG_AS_1();
 
-	if(res != 0x9a)
+	if(res != 0)
 	{
-		FLAG_V = ~res; /* Undefined V behavior */
+		FLAG_V = res; /* Undefined V behavior */
 
-		if((res & 0x0f) == 0xa)
-			res = (res & 0xf0) + 0x10;
+		if(((res|dst) & 0x0f) == 0)
+			res = (res & 0xf0) + 6;
 
-		res = MASK_OUT_ABOVE_8(res);
+		res = MASK_OUT_ABOVE_8(res + 0x9a);
 
-		FLAG_V &= res; /* Undefined V behavior part II */
+		FLAG_V &= ~res; /* Undefined V behavior part II */
 
 		m68ki_write_8(ea, MASK_OUT_ABOVE_8(res));
 
