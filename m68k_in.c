@@ -772,6 +772,7 @@ pea       32  .     .     0100100001......  A..DXWLdx.  U U U U U   6   6   5   
 pflusha   32  .     .     1111010100011...  ..........  . . . . S   .   .   .   .   4   TODO: correct timing
 pflushan  32  .     .     1111010100010...  ..........  . . . . S   .   .   .   .   4   TODO: correct timing
 pmmu      32  .     .     1111000.........  ..........  . . S S S   .   .   8   8   8
+ptest     32  .     .     1111010101.01...  ..........  . . . . S   .   .   .   .   4
 reset      0  .     .     0100111001110000  ..........  S S S S S   0   0   0   0   0
 ror        8  s     .     1110...000011...  ..........  U U U U U   6   6   8   8   8
 ror       16  s     .     1110...001011...  ..........  U U U U U   6   6   8   8   8
@@ -8455,7 +8456,7 @@ M68KMAKE_OP(pack, 16, mm, ax7)
 		ea_src = EA_AY_PD_8();
 		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
 
-		m68ki_write_8(EA_A7_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
+		m68ki_write_8(EA_A7_PD_8(), ((src >> 8) & 0x000f) | ((src<<4) & 0x00f0));
 		return;
 	}
 	m68ki_exception_illegal();
@@ -8470,7 +8471,7 @@ M68KMAKE_OP(pack, 16, mm, ay7)
 		uint ea_src = EA_A7_PD_8();
 		uint src = m68ki_read_8(ea_src);
 		ea_src = EA_A7_PD_8();
-		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
+		src = (src | (m68ki_read_8(ea_src) << 8)) + OPER_I_16();
 
 		m68ki_write_8(EA_AX_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
 		return;
@@ -8486,7 +8487,7 @@ M68KMAKE_OP(pack, 16, mm, axy7)
 		uint ea_src = EA_A7_PD_8();
 		uint src = m68ki_read_8(ea_src);
 		ea_src = EA_A7_PD_8();
-		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
+		src = (src | (m68ki_read_8(ea_src) << 8)) + OPER_I_16();
 
 		m68ki_write_8(EA_A7_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
 		return;
@@ -8503,7 +8504,7 @@ M68KMAKE_OP(pack, 16, mm, .)
 		uint ea_src = EA_AY_PD_8();
 		uint src = m68ki_read_8(ea_src);
 		ea_src = EA_AY_PD_8();
-		src = ((src << 8) | m68ki_read_8(ea_src)) + OPER_I_16();
+		src = (src | (m68ki_read_8(ea_src) << 8)) + OPER_I_16();
 
 		m68ki_write_8(EA_AX_PD_8(), ((src >> 4) & 0x00f0) | (src & 0x000f));
 		return;
@@ -8549,6 +8550,23 @@ M68KMAKE_OP(pmmu, 32, ., .)
 	{
 		m68ki_exception_1111();
 	}
+}
+
+M68KMAKE_OP(ptest, 32, ., .)
+{
+	if (CPU_TYPE_IS_040_PLUS(CPU_TYPE))
+	{
+		if(HAS_PMMU)
+		{
+			fprintf(stderr,"68040: unhandled PTEST (ir=%04x)\n", REG_IR);
+		}
+		else
+		{
+			m68ki_exception_1111();
+		}
+		return;
+	}
+	m68ki_exception_illegal();
 }
 
 M68KMAKE_OP(reset, 0, ., .)
