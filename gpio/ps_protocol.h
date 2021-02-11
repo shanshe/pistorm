@@ -11,7 +11,7 @@
 #define PIN_A0 2
 #define PIN_A1 3
 #define PIN_CLK 4
-#define PIN_UNUSED 5
+#define PIN_RESET 5
 #define PIN_RD 6
 #define PIN_WR 7
 #define PIN_D(x) (8 + x)
@@ -80,6 +80,8 @@ void ps_pulse_reset();
 
 unsigned int ps_get_ipl_zero();
 
+unsigned int ps_get_reset();
+
 #define read8 ps_read_8
 #define read16 ps_read_16
 #define read32 ps_read_32
@@ -92,5 +94,7 @@ unsigned int ps_get_ipl_zero();
 #define read_reg ps_read_status_reg
 
 #define gpio_get_irq ps_get_ipl_zero
+
+#define gpio_get_reset ps_get_reset
 
 #endif /* _PS_PROTOCOL_H */
