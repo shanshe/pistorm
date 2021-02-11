@@ -80,11 +80,12 @@ void *iplThread(void *args) {
     {
       if(amiga_reset==0)
       {
-        printf("Amiga Reset!!!<--------\n");
+        printf("Amiga Reset goes down...\n");
+        cpu_pulse_reset();
       }
       else
       {
-        printf("Amiga NO Reset!!!<--------\n");
+        printf("Amiga Reset goes up...\n");
       }
       amiga_reset_last=amiga_reset;
     }
