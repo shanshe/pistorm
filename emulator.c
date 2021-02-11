@@ -83,6 +83,7 @@ void *iplThread(void *args) {
       {
         printf("Amiga Reset goes down...\n");
         do_reset=1;
+        m68k_end_timeslice();
       }
       else
       {
