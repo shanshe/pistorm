@@ -6,8 +6,8 @@
 #include <endian.h>
 #include "hunk-reloc.h"
 
-//#define DEBUG(...)
-#define DEBUG printf
+#define DEBUG(...)
+//#define DEBUG printf
 
 #define READLW(a, b) fread(&a, 4, 1, b); a = be32toh(a);
 #define READW(a, b) fread(&a, 2, 1, b); a = be16toh(a);

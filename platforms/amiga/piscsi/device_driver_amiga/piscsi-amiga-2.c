@@ -30,8 +30,8 @@
 #define DEVICE_NAME "pi-scsi.device"
 #define DEVICE_DATE "(3 Feb 2021)"
 #define DEVICE_ID_STRING "PiSCSI " XSTR(DEVICE_VERSION) "." XSTR(DEVICE_REVISION) " " DEVICE_DATE
-#define DEVICE_VERSION 1
-#define DEVICE_REVISION 0
+#define DEVICE_VERSION 43
+#define DEVICE_REVISION 20
 #define DEVICE_PRIORITY 0
 
 #pragma pack(4)
@@ -47,6 +47,7 @@ struct piscsi_base {
         uint8_t read_only;
         uint8_t motor;
         uint8_t unit_num;
+        uint16_t scsi_num;
         uint16_t h, s;
         uint32_t c;
 
@@ -108,13 +109,14 @@ static struct Library __attribute__((used)) *init_device(uint8_t *seg_list asm("
 
     for (int i = 0; i < NUM_UNITS; i++) {
         uint16_t r = 0;
-        WRITESHORT(PISCSI_CMD_DRVNUM, i);
+        WRITESHORT(PISCSI_CMD_DRVNUM, (i * 10));
         dev_base->units[i].regs_ptr = PISCSI_OFFSET;
         READSHORT(PISCSI_CMD_DRVTYPE, r);
         dev_base->units[i].enabled = r;
         dev_base->units[i].present = r;
         dev_base->units[i].valid = r;
         dev_base->units[i].unit_num = i;
+        dev_base->units[i].scsi_num = i * 10;
         if (dev_base->units[i].present) {
             READLONG(PISCSI_CMD_CYLS, dev_base->units[i].c);
             READSHORT(PISCSI_CMD_HEADS, dev_base->units[i].h);
@@ -166,12 +168,12 @@ static void __attribute__((used)) open(struct Library *dev asm("a6"), struct IOE
     }
 
     iotd->iotd_Req.io_Error = io_err;
-    //dev_base->open_count++;
+    ((struct Library *)dev_base->pi_dev)->lib_OpenCnt++;
 }
 
 static uint8_t* __attribute__((used)) close(struct Library *dev asm("a6"), struct IOExtTD *iotd asm("a1"))
 {
-    //dev_base->open_count--;
+    ((struct Library *)dev_base->pi_dev)->lib_OpenCnt--;
     return 0;
 }
 
@@ -297,6 +299,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
     uint8_t *data = (uint8_t *)scsi->scsi_Data;
     uint32_t i, block = 0, blocks = 0, maxblocks = 0;
     uint8_t err = 0;
+    uint8_t write = 0;
 
     debugval(PISCSI_DBG_VAL1, iostd->io_Length);
     debugval(PISCSI_DBG_VAL2, scsi->scsi_Command[0]);
@@ -361,13 +364,19 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
         case 0x28: // READ (10)
         case 0x2A: // WRITE (10)
             switch (scsi->scsi_Command[0]) {
-                case 0x08: case 0x0A:
+                case 0x0A:
+                    write = 1;
+                /* Fallthrough */
+                case 0x08:
                     block = scsi->scsi_Command[1] & 0x1f;
                     block = (block << 8) | scsi->scsi_Command[2];
                     block = (block << 8) | scsi->scsi_Command[3];
                     blocks = scsi->scsi_Command[4];
                     break;
-                case 0x28: case 0x2A:
+                case 0x2A:
+                    write = 1;
+                /* Fallthrough */
+                case 0x28:
                     block = scsi->scsi_Command[2];
                     block = (block << 8) | scsi->scsi_Command[3];
                     block = (block << 8) | scsi->scsi_Command[4];
@@ -378,6 +387,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
                     break;
             }
 
+            WRITESHORT(PISCSI_CMD_DRVNUM, (u->scsi_num));
             READLONG(PISCSI_CMD_BLOCKS, maxblocks);
             if (block + blocks > maxblocks || blocks == 0) {
                 err = IOERR_BADADDRESS;
@@ -392,7 +402,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
                 break;
             }
 
-            if (scsi->scsi_Command[0] == 0x08) {
+            if (write == 0) {
                 WRITELONG(PISCSI_CMD_ADDR2, block);
                 WRITELONG(PISCSI_CMD_ADDR2, (blocks << 9));
                 WRITELONG(PISCSI_CMD_ADDR3, (uint32_t)data);
@@ -422,6 +432,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
                 break;
             }
 
+            WRITESHORT(PISCSI_CMD_DRVNUM, (u->scsi_num));
             READLONG(PISCSI_CMD_BLOCKS, blocks);
             ((uint32_t*)data)[0] = blocks - 1;
             ((uint32_t*)data)[1] = PISCSI_BLOCK_SIZE;
@@ -436,6 +447,7 @@ uint8_t piscsi_scsi(struct piscsi_unit *u, struct IORequest *io)
             data[2] = 0;
             data[3] = 8;
 
+            WRITESHORT(PISCSI_CMD_DRVNUM, (u->scsi_num));
             READLONG(PISCSI_CMD_BLOCKS, maxblocks);
             (blocks = (maxblocks - 1) & 0xFFFFFF);
 

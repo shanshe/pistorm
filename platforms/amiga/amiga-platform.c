@@ -341,8 +341,8 @@ void setvar_amiga(struct emulator_config *cfg, char *var, char *val) {
         printf("[AMIGA] PISCSI Interface Enabled.\n");
         piscsi_enabled = 1;
         piscsi_init();
-        //ac_z2_type[ac_z2_pic_count] = ACTYPE_PISCSI;
-        //ac_z2_pic_count++;
+        ac_z2_type[ac_z2_pic_count] = ACTYPE_PISCSI;
+        ac_z2_pic_count++;
         adjust_ranges_amiga(cfg);
     }
     if (piscsi_enabled) {
@@ -397,6 +397,9 @@ void handle_reset_amiga(struct emulator_config *cfg) {
     ac_z2_done = 0;
     ac_z2_current_pic = 0;
     ac_z3_current_pic = 0;
+
+    if (piscsi_enabled)
+        piscsi_refresh_drives();
 
     adjust_ranges_amiga(cfg);
 }
