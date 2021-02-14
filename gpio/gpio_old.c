@@ -10,7 +10,7 @@
 #include "../m68k.h"
 #include "../platforms/amiga/Gayle.h"
 #include "../platforms/amiga/gayle-ide/ide.h"
-#include "gpio.h"
+#include "gpio_old.h"
 
 // I/O access
 volatile unsigned int *gpio;
