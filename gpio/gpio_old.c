@@ -28,6 +28,7 @@ volatile uint32_t srdata2_old;
 
 extern int mem_fd, mouse_fd, keyboard_fd;
 extern int mem_fd_gpclk;
+extern uint8_t gayle_int;
 
 void *gpio_map;
 void *gpclk_map;
