@@ -319,11 +319,13 @@ int main(int argc, char *argv[]) {
     else {
       m68k_set_irq(0);
     }
+#ifdef AMIGA_RESET_IN
     if(do_reset)
     {
        cpu_pulse_reset();
        do_reset=0;
     }
+#endif
     while (get_key_char(&c, &c_code, &c_type)) {
       if (c && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
         kb_hook_enabled = 1;
