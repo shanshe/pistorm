@@ -409,3 +409,8 @@ void *iplThread(void *args) {
   }
 }
 */
+
+unsigned int gpio_get_reset() {
+  unsigned int value = *(gpio + 13);
+  return (!!(value & (1 << PIN_RESET)));
+}
