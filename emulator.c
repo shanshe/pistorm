@@ -78,12 +78,15 @@ unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300;
 struct emulator_config *cfg = NULL;
 char keyboard_file[256] = "/dev/input/event0";
+#ifdef AMIGA_RESET_IN
 unsigned int amiga_reset=0, amiga_reset_last=0;
 unsigned int do_reset=0;
+#endif
 void *iplThread(void *args) {
   printf("IPL thread running\n");
 
   while (1) {
+#ifdef AMIGA_RESET_IN
     amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
@@ -99,6 +102,7 @@ void *iplThread(void *args) {
       }
       amiga_reset_last=amiga_reset;
     }
+#endif
     if (!gpio_get_irq()) {
       irq = 1;
       m68k_end_timeslice();
