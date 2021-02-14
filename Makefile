@@ -20,8 +20,7 @@ MAINFILES        = emulator.c \
 	platforms/amiga/piscsi/piscsi.c \
 	platforms/amiga/net/pi-net.c \
 	platforms/shared/rtc.c\
-	gpio/gpio_old.c \
-#	gpio/ps_protocol.c
+	gpio/gpio_old.c
 
 MUSASHIFILES     = m68kcpu.c m68kdasm.c softfloat/softfloat.c softfloat/fsincos.c softfloat/fyl2x.c
 MUSASHIGENCFILES = m68kops.c

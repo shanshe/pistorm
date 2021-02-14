@@ -27,7 +27,14 @@
 #include "platforms/amiga/piscsi/piscsi-enums.h"
 #include "platforms/amiga/net/pi-net.h"
 #include "platforms/amiga/net/pi-net-enums.h"
+
+//#define PS_PROTOCOL
+
+#ifndef PS_PROTOCOL
+#include "gpio/gpio_old.h"
+#else
 #include "gpio/ps_protocol.h"
+#endif
 
 unsigned char read_ranges;
 unsigned int read_addr[8];
@@ -221,7 +228,8 @@ int main(int argc, char *argv[]) {
   InitGayle();
 
   signal(SIGINT, sigint_handler);
-  /*setup_io();
+#ifndef PS_PROTOCOL
+  setup_io();
 
   //goto skip_everything;
 
@@ -252,11 +260,12 @@ int main(int argc, char *argv[]) {
     m68k_set_reg(M68K_REG_PC, 0xF80002);
   } else {
     m68k_set_reg(M68K_REG_PC, 0x0);
-  }*/
+  }
+#else
   ps_setup_protocol();
   ps_reset_state_machine();
   ps_pulse_reset();
-
+#endif
   usleep(1500);
   m68k_init();
   printf("Setting CPU type to %d.\n", cpu_type);
@@ -401,12 +410,15 @@ int main(int argc, char *argv[]) {
 }
 
 void cpu_pulse_reset(void) {
+#ifdef PS_PROTOCOL
   ps_pulse_reset();
-  //write_reg(0x00);
-  // printf("Status Reg%x\n",read_reg());
-  //usleep(100000);
-  //write_reg(0x02);
-  // printf("Status Reg%x\n",read_reg());
+#else
+  write_reg(0x00);
+  printf("Status Reg%x\n",read_reg());
+  usleep(100000);
+  write_reg(0x02);
+  printf("Status Reg%x\n",read_reg());
+#endif
   if (cfg->platform->handle_reset)
     cfg->platform->handle_reset(cfg);
 
