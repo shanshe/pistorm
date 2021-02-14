@@ -27,14 +27,7 @@
 #include "platforms/amiga/piscsi/piscsi-enums.h"
 #include "platforms/amiga/net/pi-net.h"
 #include "platforms/amiga/net/pi-net-enums.h"
-
-//#define PS_PROTOCOL
-
-#ifndef PS_PROTOCOL
-#include "gpio/gpio_old.h"
-#else
 #include "gpio/ps_protocol.h"
-#endif
 
 unsigned char read_ranges;
 unsigned int read_addr[8];
@@ -78,15 +71,12 @@ unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300;
 struct emulator_config *cfg = NULL;
 char keyboard_file[256] = "/dev/input/event0";
-#ifdef AMIGA_RESET_IN
 unsigned int amiga_reset=0, amiga_reset_last=0;
 unsigned int do_reset=0;
-#endif
 void *iplThread(void *args) {
   printf("IPL thread running\n");
 
   while (1) {
-#ifdef AMIGA_RESET_IN
     amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
@@ -102,7 +92,6 @@ void *iplThread(void *args) {
       }
       amiga_reset_last=amiga_reset;
     }
-#endif
     if (!gpio_get_irq()) {
       irq = 1;
       m68k_end_timeslice();
@@ -232,8 +221,7 @@ int main(int argc, char *argv[]) {
   InitGayle();
 
   signal(SIGINT, sigint_handler);
-#ifndef PS_PROTOCOL
-  setup_io();
+  /*setup_io();
 
   //goto skip_everything;
 
@@ -264,12 +252,11 @@ int main(int argc, char *argv[]) {
     m68k_set_reg(M68K_REG_PC, 0xF80002);
   } else {
     m68k_set_reg(M68K_REG_PC, 0x0);
-  }
-#else
+  }*/
   ps_setup_protocol();
   ps_reset_state_machine();
   ps_pulse_reset();
-#endif
+
   usleep(1500);
   m68k_init();
   printf("Setting CPU type to %d.\n", cpu_type);
@@ -319,13 +306,11 @@ int main(int argc, char *argv[]) {
     else {
       m68k_set_irq(0);
     }
-#ifdef AMIGA_RESET_IN
     if(do_reset)
     {
        cpu_pulse_reset();
        do_reset=0;
     }
-#endif
     while (get_key_char(&c, &c_code, &c_type)) {
       if (c && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
         kb_hook_enabled = 1;
@@ -416,15 +401,12 @@ int main(int argc, char *argv[]) {
 }
 
 void cpu_pulse_reset(void) {
-#ifdef PS_PROTOCOL
   ps_pulse_reset();
-#else
-  write_reg(0x00);
-  printf("Status Reg%x\n",read_reg());
-  usleep(100000);
-  write_reg(0x02);
-  printf("Status Reg%x\n",read_reg());
-#endif
+  //write_reg(0x00);
+  // printf("Status Reg%x\n",read_reg());
+  //usleep(100000);
+  //write_reg(0x02);
+  // printf("Status Reg%x\n",read_reg());
   if (cfg->platform->handle_reset)
     cfg->platform->handle_reset(cfg);
 

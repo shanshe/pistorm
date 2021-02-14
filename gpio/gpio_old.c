@@ -10,7 +10,7 @@
 #include "../m68k.h"
 #include "../platforms/amiga/Gayle.h"
 #include "../platforms/amiga/gayle-ide/ide.h"
-#include "gpio_old.h"
+#include "gpio.h"
 
 // I/O access
 volatile unsigned int *gpio;
@@ -28,7 +28,6 @@ volatile uint32_t srdata2_old;
 
 extern int mem_fd, mouse_fd, keyboard_fd;
 extern int mem_fd_gpclk;
-extern uint8_t gayle_int;
 
 void *gpio_map;
 void *gpclk_map;
@@ -409,8 +408,3 @@ void *iplThread(void *args) {
   }
 }
 */
-
-unsigned int gpio_get_reset() {
-  unsigned int value = *(gpio + 13);
-  return (!!(value & (1 << PIN_RESET)));
-}

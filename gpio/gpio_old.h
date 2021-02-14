@@ -14,8 +14,6 @@
 #define SA1 3
 #define SA2 2
 
-#define PIN_RESET 5
-
 #define STATUSREGADDR  \
   GPIO_CLR = 1 << SA0; \
   GPIO_CLR = 1 << SA1; \
@@ -96,6 +94,3 @@ uint32_t read32(uint32_t address);
 
 uint16_t read_reg(void);
 void write_reg(unsigned int value);
-
-unsigned int gpio_get_reset();
-

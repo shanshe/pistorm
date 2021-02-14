@@ -4,6 +4,7 @@ MAINFILES        = emulator.c \
 	memory_mapped.c \
 	config_file/config_file.c \
 	input/input.c \
+	gpio/ps_protocol.c \
 	platforms/platforms.c \
 	platforms/amiga/amiga-autoconf.c \
 	platforms/amiga/amiga-platform.c \
@@ -19,8 +20,7 @@ MAINFILES        = emulator.c \
 	platforms/amiga/rtg/rtg-gfx.c \
 	platforms/amiga/piscsi/piscsi.c \
 	platforms/amiga/net/pi-net.c \
-	platforms/shared/rtc.c\
-	gpio/gpio_old.c
+	platforms/shared/rtc.c
 
 MUSASHIFILES     = m68kcpu.c m68kdasm.c softfloat/softfloat.c softfloat/fsincos.c softfloat/fyl2x.c
 MUSASHIGENCFILES = m68kops.c

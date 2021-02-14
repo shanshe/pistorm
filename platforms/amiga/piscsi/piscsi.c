@@ -9,11 +9,7 @@
 #include "piscsi-enums.h"
 #include "../hunk-reloc.h"
 #include "../../../config_file/config_file.h"
-#ifndef PS_PROTOCOL
-#include "../../../gpio/gpio_old.h"
-#else
 #include "../../../gpio/ps_protocol.h"
-#endif
 
 #define BE(val) be32toh(val)
 
