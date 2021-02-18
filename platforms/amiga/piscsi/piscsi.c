@@ -14,8 +14,8 @@
 #define BE(val) be32toh(val)
 #define BE16(val) be16toh(val)
 
-// Comment these lines to restore debug output:
-#define DEBUG_PISCSI
+// Uncomment these line to restore debug output:
+//#define DEBUG_PISCSI
 #ifdef DEBUG_PISCSI
 #define DEBUG printf
 #define DEBUG_TRIVIAL printf
@@ -30,7 +30,9 @@
 #endif
 
 extern struct emulator_config *cfg;
+#ifdef DEBUG_PISCSI
 void stop_cpu_emulation(uint8_t disasm_cur);
+#endif
 
 struct piscsi_dev devs[8];
 struct piscsi_fs filesystems[NUM_FILESYSTEMS];
@@ -52,12 +54,14 @@ uint32_t rom_cur_partition = 0, rom_cur_fs = 0;
 
 extern unsigned char ac_piscsi_rom[];
 
+#ifdef DEBUG_PISCSI
 static const char *op_type_names[4] = {
     "BYTE",
     "WORD",
     "LONGWORD",
     "MEM",
 };
+#endif
 
 //static const char *partition_marker = "PART";
 
@@ -423,8 +427,8 @@ void print_piscsi_debug_message(int index) {
             DEBUG_TRIVIAL("[PISCSI] SCSI ModeSense debug. Data: %.8X\n", piscsi_dbg[0]);
             r = get_mapped_item_by_address(cfg, piscsi_dbg[0]);
             if (r != -1) {
-                uint32_t addr = piscsi_dbg[0] - cfg->map_offset[r];
 #ifdef DEBUG_PISCSI
+                uint32_t addr = piscsi_dbg[0] - cfg->map_offset[r];
                 struct SCSICmd_ModeSense6 *sense = (struct SCSICmd_ModeSense6 *)(&cfg->map_data[r][addr]);
 #endif
                 DEBUG_TRIVIAL("[SenseData] CMD: %.2X\n", sense->opcode);
