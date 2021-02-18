@@ -25,8 +25,8 @@
 #include "gayle-ide/ide.h"
 #include "amiga-registers.h"
 
-//#define DEBUG(...)
-#define DEBUG printf
+#define DEBUG(...)
+//#define DEBUG printf
 
 uint8_t gary_cfg[8];
 
@@ -219,7 +219,7 @@ skip_idewrite8:;
     return;
   }
 
-  printf("Write Byte to Gayle Space 0x%06x (0x%06x)\n", address, value);
+  DEBUG("Write Byte to Gayle Space 0x%06x (0x%06x)\n", address, value);
 }
 
 void writeGayle(unsigned int address, unsigned int value) {
@@ -249,7 +249,7 @@ void writeGayle(unsigned int address, unsigned int value) {
     return;
   }
 
-  printf("Write Word to Gayle Space 0x%06x (0x%06x)\n", address, value);
+  DEBUG("Write Word to Gayle Space 0x%06x (0x%06x)\n", address, value);
 }
 
 void writeGayleL(unsigned int address, unsigned int value) {
@@ -269,7 +269,7 @@ void writeGayleL(unsigned int address, unsigned int value) {
     return;
   }
 
-  printf("Write Long to Gayle Space 0x%06x (0x%06x)\n", address, value);
+  DEBUG("Write Long to Gayle Space 0x%06x (0x%06x)\n", address, value);
 }
 
 uint8_t readGayleB(unsigned int address) {
@@ -381,7 +381,7 @@ skip_ideread8:;
     return get_rtc_byte(address, rtc_type);
   }
 
-  printf("Read Byte From Gayle Space 0x%06x\n", address);
+  DEBUG("Read Byte From Gayle Space 0x%06x\n", address);
   return 0xFF;
 }
 
@@ -412,7 +412,7 @@ uint16_t readGayle(unsigned int address) {
     return ((get_rtc_byte(address, rtc_type) << 8) | (get_rtc_byte(address + 1, rtc_type)));
   }
 
-  printf("Read Word From Gayle Space 0x%06x\n", address);
+  DEBUG("Read Word From Gayle Space 0x%06x\n", address);
   return 0x8000;
 }
 
@@ -429,6 +429,6 @@ uint32_t readGayleL(unsigned int address) {
     return ((get_rtc_byte(address, rtc_type) << 24) | (get_rtc_byte(address + 1, rtc_type) << 16) | (get_rtc_byte(address + 2, rtc_type) << 8) | (get_rtc_byte(address + 3, rtc_type)));
   }
 
-  printf("Read Long From Gayle Space 0x%06x\n", address);
+  DEBUG("Read Long From Gayle Space 0x%06x\n", address);
   return 0x8000;
 }

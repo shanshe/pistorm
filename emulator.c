@@ -23,6 +23,7 @@
 #include "platforms/amiga/gayle-ide/ide.h"
 #include "platforms/amiga/amiga-registers.h"
 #include "platforms/amiga/rtg/rtg.h"
+#include "platforms/amiga/hunk-reloc.h"
 #include "platforms/amiga/piscsi/piscsi.h"
 #include "platforms/amiga/piscsi/piscsi-enums.h"
 #include "platforms/amiga/net/pi-net.h"

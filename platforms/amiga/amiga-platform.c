@@ -6,6 +6,7 @@
 #include "amiga-autoconf.h"
 #include "amiga-registers.h"
 #include "../shared/rtc.h"
+#include "hunk-reloc.h"
 #include "piscsi/piscsi.h"
 #include "piscsi/piscsi-enums.h"
 #include "net/pi-net.h"
