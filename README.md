@@ -13,9 +13,10 @@
 In order to successfully use the features on the wip-crap branch, you need to take a few additional steps:
 
 * Follow the steps in the "Simple quickstart" below up to `sudo apt-install git`, then do this:
-* `git clone https://github.com/beeanyew/pistorm/tree/wip-crap`
+* `git clone https://github.com/beeanyew/pistorm.git`
 * `cd pistorm`
 * `git checkout wip-crap`
+* `sudo apt-get install libsdl2-dev`
 * `make`
 * Follow the instructions for `FPGA bitstream update` below the quickstart. This is very important, as the latest commit on the branch uses the updated proto3 firmware.
 

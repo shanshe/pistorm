@@ -1074,38 +1074,7 @@ char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type);
 /* =========================== UTILITY FUNCTIONS ========================== */
 /* ======================================================================== */
 
-/*
-inline unsigned int m68k_read_pcrelative_8(unsigned int address)
-{
-	return ((m68k_read_immediate_16(address&~1)>>(8*(1-(address & 1))))&0xff);
-}
 
-inline unsigned int m68k_read_pcrelative_16(unsigned int address)
-{
-	if (!WORD_ALIGNED(address))
-		return
-			(m68k_read_immediate_16(address-1) << 8) |
-			(m68k_read_immediate_16(address+1) >> 8);
-
-	else
-		return
-			(m68k_read_immediate_16(address  )      );
-}
-
-inline unsigned int m68k_read_pcrelative_32(unsigned int address)
-{
-	if (!WORD_ALIGNED(address))
-		return
-			(m68k_read_immediate_16(address-1) << 24) |
-			(m68k_read_immediate_16(address+1) << 8)  |
-			(m68k_read_immediate_16(address+3) >> 8);
-
-	else
-		return
-			(m68k_read_immediate_16(address  ) << 16) |
-			(m68k_read_immediate_16(address+2)      );
-}
-*/
 /* ---------------------------- Read Immediate ---------------------------- */
 
 extern unsigned char read_ranges;
@@ -1222,6 +1191,7 @@ static inline uint m68ki_read_imm_16(void)
 			return be16toh(((unsigned short *)(read_data[i] + (address - read_addr[i])))[0]);
 		}
 	}
+
 
 	return m68k_read_immediate_16(address);
 #endif /* M68K_EMULATE_PREFETCH */
@@ -1440,7 +1410,6 @@ static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 	    address = pmmu_translate_addr(address,0);
 #endif
 
-
 	m68k_write_memory_32_pd(ADDRESS_68K(address), value);
 }
 #endif
@@ -1453,14 +1422,14 @@ static inline void m68ki_write_32_pd_fc(uint address, uint fc, uint value)
 static inline uint m68ki_get_ea_pcdi(void)
 {
 	uint old_pc = REG_PC;
-//	m68ki_use_program_space(); /* auto-disable */
+	m68ki_use_program_space(); /* auto-disable */
 	return old_pc + MAKE_INT_16(m68ki_read_imm_16());
 }
 
 
 static inline uint m68ki_get_ea_pcix(void)
 {
-//	m68ki_use_program_space(); /* auto-disable */
+	m68ki_use_program_space(); /* auto-disable */
 	return m68ki_get_ea_ix(REG_PC);
 }
 
@@ -1690,14 +1659,14 @@ static inline void m68ki_fake_pull_32(void)
 static inline void m68ki_jump(uint new_pc)
 {
 	REG_PC = new_pc;
-//	m68ki_pc_changed(REG_PC);
+	m68ki_pc_changed(REG_PC);
 }
 
 static inline void m68ki_jump_vector(uint vector)
 {
 	REG_PC = (vector<<2) + REG_VBR;
 	REG_PC = m68ki_read_data_32(REG_PC);
-//	m68ki_pc_changed(REG_PC);
+	m68ki_pc_changed(REG_PC);
 }
 
 
@@ -1719,7 +1688,7 @@ static inline void m68ki_branch_16(uint offset)
 static inline void m68ki_branch_32(uint offset)
 {
 	REG_PC += offset;
-//	m68ki_pc_changed(REG_PC);
+	m68ki_pc_changed(REG_PC);
 }
 
 /* ---------------------------- Status Register --------------------------- */
