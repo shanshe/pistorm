@@ -54,7 +54,6 @@ extern volatile unsigned int *gpio;
 extern volatile uint16_t srdata;
 extern uint8_t realtime_graphics_debug;
 uint8_t realtime_disassembly, int2_enabled = 0;
-uint8_t catch_disassembly_cacr=0;
 uint32_t do_disasm = 0;
 
 char disasm_buf[4096];
@@ -71,9 +70,11 @@ int gayleirq;
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300;
 struct emulator_config *cfg = NULL;
-char keyboard_file[256] = "/dev/input/event0";
+char keyboard_file[256] = "/dev/input/event1";
+
 unsigned int amiga_reset=0, amiga_reset_last=0;
 unsigned int do_reset=0;
+
 void *iplThread(void *args) {
   printf("IPL thread running\n");
 
@@ -94,11 +95,10 @@ void *iplThread(void *args) {
       amiga_reset_last=amiga_reset;
     }
     if (!gpio_get_irq()) {
-      irq = 1;
+      if (irq == 0)
+        irq = 1;
       m68k_end_timeslice();
     }
-    else
-      irq = 0;
 
     if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
@@ -153,7 +153,7 @@ void sigint_handler(int sig_num) {
 
 int main(int argc, char *argv[]) {
   int g;
-//  const struct sched_param priority = {99};
+  //const struct sched_param priority = {99};
 
   // Some command line switch stuffles
   for (g = 1; g < argc; g++) {
@@ -299,10 +299,12 @@ int main(int argc, char *argv[]) {
     if (irq) {
       unsigned int status = read_reg();
       m68k_set_irq((status & 0xe000) >> 13);
+      irq = 0;
     }
     else if (gayleirq && int2_enabled) {
       write16(0xdff09c, 0x8000 | (1 << 3));
       m68k_set_irq(2);
+      irq = 0;
     }
     else {
       m68k_set_irq(0);

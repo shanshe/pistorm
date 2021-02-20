@@ -698,7 +698,6 @@ extern jmp_buf m68ki_aerr_trap;
 	#define M68K_DO_LOG_EMU(A)
 #endif
 
-extern uint8_t realtime_disassembly,catch_disassembly_cacr;
 
 
 /* -------------------------- EA / Operand Access ------------------------- */
@@ -1147,7 +1146,6 @@ static inline uint32 m68ki_ic_readimm16(uint32 address)
 			}
 		}
 	}
-
 	return m68k_read_immediate_16(address);
 }
 
@@ -1191,7 +1189,6 @@ static inline uint m68ki_read_imm_16(void)
 			return be16toh(((unsigned short *)(read_data[i] + (address - read_addr[i])))[0]);
 		}
 	}
-
 
 	return m68k_read_immediate_16(address);
 #endif /* M68K_EMULATE_PREFETCH */

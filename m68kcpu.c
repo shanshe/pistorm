@@ -1201,11 +1201,28 @@ void m68k_set_context(void* src)
 	if(src) m68ki_cpu = *(m68ki_cpu_core*)src;
 }
 
+#if M68K_SEPARATE_READS
 /* Read data immediately following the PC */
 inline unsigned int  m68k_read_immediate_16(unsigned int address) {
+#if M68K_EMULATE_PREFETCH == OPT_ON
+	for (int i = 0; i < read_ranges; i++) {
+		if(address >= read_addr[i] && address < read_upper[i]) {
+			return be16toh(((unsigned short *)(read_data[i] + (address - read_addr[i])))[0]);
+		}
+	}
+#endif
+	
 	return m68k_read_memory_16(address);
 }
 inline unsigned int  m68k_read_immediate_32(unsigned int address) {
+#if M68K_EMULATE_PREFETCH == OPT_ON
+	for (int i = 0; i < read_ranges; i++) {
+		if(address >= read_addr[i] && address < read_upper[i]) {
+			return be32toh(((unsigned int *)(read_data[i] + (address - read_addr[i])))[0]);
+		}
+	}
+#endif
+
 	return m68k_read_memory_32(address);
 }
 
@@ -1237,6 +1254,7 @@ inline unsigned int  m68k_read_pcrelative_32(unsigned int address) {
 
     return m68k_read_memory_32(address);
 }
+#endif
 
 void m68k_add_ram_range(uint32_t addr, uint32_t upper, unsigned char *ptr)
 {
