@@ -10,7 +10,7 @@
 // MMU status register bit definitions
 
 #if 0
-#define MMULOG(A) if(realtime_disassembly){printf A;}
+#define MMULOG(A) printf A
 #else
 #define MMULOG(...)
 #endif
@@ -19,8 +19,6 @@
 #else
 #define logerror(...)
 #endif
-
-extern uint8_t realtime_disassembly,catch_disassembly_cacr;
 
 // MMU SR register fields
 #define M68K_MMU_SR_BUS_ERROR        0x8000
@@ -1180,9 +1178,6 @@ void m68851_pmove_put(uint32 ea, uint16 modes)
 
 void m68851_pmove(uint32 ea, uint16 modes)
 {
-	if(catch_disassembly_cacr)
-		realtime_disassembly=1;
-
 	switch ((modes>>13) & 0x7)
 	{
 	case 0:	// MC68030/040 form with FD bit
