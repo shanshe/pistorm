@@ -95,9 +95,11 @@ void *iplThread(void *args) {
       amiga_reset_last=amiga_reset;
     }
     if (!gpio_get_irq()) {
-      if (irq == 0)
         irq = 1;
       m68k_end_timeslice();
+    }
+    else {
+      irq = 0;
     }
 
     if (gayle_ide_enabled) {
@@ -109,7 +111,7 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
-    usleep(0);
+    //usleep(0);
   }
   return args;
 }
@@ -299,12 +301,12 @@ int main(int argc, char *argv[]) {
     if (irq) {
       unsigned int status = read_reg();
       m68k_set_irq((status & 0xe000) >> 13);
-      irq = 0;
+      //irq = 0;
     }
     else if (gayleirq && int2_enabled) {
       write16(0xdff09c, 0x8000 | (1 << 3));
       m68k_set_irq(2);
-      irq = 0;
+      //irq = 0;
     }
     else {
       m68k_set_irq(0);
