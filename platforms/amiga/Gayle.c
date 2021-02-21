@@ -3,7 +3,7 @@
 //  Omega
 //
 //  Created by Matt Parsons on 06/03/2019.
-//  Copyright © 2019 Matt Parsons. All rights reserved.
+//  Copyright  2019 Matt Parsons. All rights reserved.
 //
 
 // Write Byte to Gayle Space 0xda9000 (0x0000c3)
@@ -165,6 +165,7 @@ void writeGayleB(unsigned int address, unsigned int value) {
           goto idewrite8;
         case GIRQ_4000_OFFSET:
           gayle_a4k_irq = value;
+        /* Fallthrough */
         case GIRQ_OFFSET:
           gayle_irq = (gayle_irq & value) | (value & (GAYLE_IRQ_RESET | GAYLE_IRQ_BERR));
           return;

@@ -94,11 +94,28 @@ struct emulator_config *cfg = NULL;
 char keyboard_file[256] = "/dev/input/event1";
 
 uint64_t trig_irq = 0, serv_irq = 0;
+unsigned int amiga_reset=0, amiga_reset_last=0;
+unsigned int do_reset=0;
 
 void *iplThread(void *args) {
   printf("IPL thread running\n");
 
   while (1) {
+    amiga_reset=gpio_get_reset();
+    if(amiga_reset!=amiga_reset_last)
+    {
+      if(amiga_reset==0)
+      {
+        printf("Amiga Reset is down...\n");
+        do_reset=1;
+        m68k_end_timeslice();
+      }
+      else
+      {
+        printf("Amiga Reset is up...\n");
+      }
+      amiga_reset_last=amiga_reset;
+    }
     if (!gpio_get_irq()) {
       irq = 1;
       M68K_END_TIMESLICE;
@@ -339,6 +356,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    if(do_reset)
+    {
+       cpu_pulse_reset();
+       do_reset=0;
+    }
     while (get_key_char(&c, &c_code, &c_type)) {
       if (c && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
         kb_hook_enabled = 1;

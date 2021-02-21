@@ -1,6 +1,6 @@
 /*
  * Copyright 2020 Claude Schwarz
- * Copyright 2020 Niklas Ekström - rewrite in Verilog
+ * Copyright 2020 Niklas Ekstrom - rewrite in Verilog
  */
 module pistorm(
     output reg      PI_TXN_IN_PROGRESS, // GPIO0
