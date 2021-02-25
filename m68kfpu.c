@@ -1375,6 +1375,7 @@ static void fpgen_rm_reg(uint16 w2)
 
 				// handle it right here, the usual opmode bits aren't valid in the FMOVECR case
 				REG_FP[dst] = source;
+				//FIXME mame doesn't use SET_CONDITION_CODES here
 				SET_CONDITION_CODES(REG_FP[dst]); // JFF when destination is a register, we HAVE to update FPCR
 				USE_CYCLES(4);
 				return;
@@ -1403,6 +1404,7 @@ static void fpgen_rm_reg(uint16 w2)
 			sint32 temp;
 			temp = floatx80_to_int32(source);
 			REG_FP[dst] = int32_to_floatx80(temp);
+			//FIXME mame doesn't use SET_CONDITION_CODES here
 			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
 			break;
 		}
@@ -1411,6 +1413,7 @@ static void fpgen_rm_reg(uint16 w2)
 			sint32 temp;
 			temp = floatx80_to_int32_round_to_zero(source);
 			REG_FP[dst] = int32_to_floatx80(temp);
+			//FIXME mame doesn't use SET_CONDITION_CODES here
 			SET_CONDITION_CODES(REG_FP[dst]);  // JFF needs update condition codes
 			break;
 		}
@@ -1504,6 +1507,7 @@ static void fpgen_rm_reg(uint16 w2)
 		case 0x20:		// FDIV
 		{
 			REG_FP[dst] = floatx80_div(REG_FP[dst], source);
+			//FIXME mame doesn't use SET_CONDITION_CODES here
 			SET_CONDITION_CODES(REG_FP[dst]); // JFF
 			USE_CYCLES(43);
 			break;
@@ -2005,12 +2009,12 @@ static int perform_fsave(uint32 addr, int inc)
 		if(inc)
 		{
 			m68ki_write_32(addr, 0x41000000);
-			return 4;
+			return 4 -4;
 		}
 		else
 		{
-			m68ki_write_32(addr-4, 0x41000000);
-			return -4;
+			m68ki_write_32(addr, 0x41000000);
+			return -4 +4;
 		}
 	}
 
@@ -2024,18 +2028,18 @@ static int perform_fsave(uint32 addr, int inc)
 		m68ki_write_32(addr+16, 0);
 		m68ki_write_32(addr+20, 0);
 		m68ki_write_32(addr+24, 0x70000000);
-		return 7*4;
+		return 7*4 -4;
 	}
 	else
 	{
-		m68ki_write_32(addr-4, 0x70000000);
-		m68ki_write_32(addr-8, 0);
-		m68ki_write_32(addr-12, 0);
-		m68ki_write_32(addr-16, 0);
-		m68ki_write_32(addr-20, 0);
-		m68ki_write_32(addr-24, 0);
-		m68ki_write_32(addr-28, 0x1f180000);
-		return -7*4;
+		m68ki_write_32(addr+4-4, 0x70000000);
+		m68ki_write_32(addr+4-8, 0);
+		m68ki_write_32(addr+4-12, 0);
+		m68ki_write_32(addr+4-16, 0);
+		m68ki_write_32(addr+4-20, 0);
+		m68ki_write_32(addr+4-24, 0);
+		m68ki_write_32(addr+4-28, 0x1f180000);
+		return -7*4 +4;
 	}
 }
 
@@ -2075,9 +2079,7 @@ void m68040_do_fsave(uint32 addr, int reg, int inc)
 
 void m68040_do_frestore(uint32 addr, int reg)
 {
-	uint8 m40 = m68ki_cpu.cpu_type & CPU_TYPE_040;
 	uint32 temp = m68ki_read_32(addr);
-
 	// check for nullptr frame
 	if (temp & 0xff000000)
 	{
@@ -2086,14 +2088,15 @@ void m68040_do_frestore(uint32 addr, int reg)
 
 		if (reg != -1)
 		{
+			uint8 m40 = !!(m68ki_cpu.cpu_type & CPU_TYPE_040);
 			// how about an IDLE frame?
 			if (!m40 && ((temp & 0x00ff0000) == 0x00180000))
 			{
-				REG_A[reg] += 7*4;
+				REG_A[reg] += 7*4-4;
 			}
 			else if (m40 && ((temp & 0xffff0000) == 0x41000000))
 			{
-				REG_A[reg] += 4;
+//				REG_A[reg] += 4;
 			} // check UNIMP
 			else if ((temp & 0x00ff0000) == 0x00380000)
 			{
@@ -2131,12 +2134,13 @@ void m68040_fpu_op1()
 
 				case 3:	// (An)+
 					addr = EA_AY_PI_32();
-					m68040_do_fsave(addr, -1, 1); // -1 was reg
+					printf("FSAVE mode %d, reg A%d=0x%08x\n",mode,reg,REG_A[reg]);
+					m68040_do_fsave(addr, -1, 1); // FIXME: -1 was reg
 					break;
 
 				case 4: // -(An)
 					addr = EA_AY_PD_32();
-					m68040_do_fsave(addr, -1, 0);  // -1 was reg
+					m68040_do_fsave(addr, reg, 0); // FIXME: -1 was reg
 					break;
 				case 5: // (D16, An)
 					addr = EA_AY_DI_16();
@@ -2187,7 +2191,7 @@ void m68040_fpu_op1()
 
 				case 3:	// (An)+
 					addr = EA_AY_PI_32();
-					m68040_do_frestore(addr, -1);  // -1 was reg
+					m68040_do_frestore(addr, reg); // FIXME: -1 was reg
 					break;
 
 				case 5: // (D16, An)
