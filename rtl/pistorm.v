@@ -183,19 +183,21 @@ module pistorm(
 
   reg [3:0] ipl_counter = 4'd0;
 
-  always @(negedge c7m) begin
-    if (ipl == 3'd0) begin
-      if (ipl_counter == 4'd8) begin
-        PI_IPL_ZERO <= 1'd1;
+  always @(posedge c200m) begin
+    if (c7m_falling) begin
+      if (ipl == 3'd0) begin
+        if (ipl_counter == 4'd8) begin
+          PI_IPL_ZERO <= 1'd1;
+        end
+        else begin
+          ipl_counter <= ipl_counter + 4'd1;
+        end
       end
-      else  begin
-        ipl_counter <= ipl_counter + 4'd1;
-		end
-	 end
-	 else begin
-      ipl_counter <= 4'd0;
-      PI_IPL_ZERO <= 1'd0;
-	 end
+      else begin
+        ipl_counter <= 4'd0;
+        PI_IPL_ZERO <= 1'd0;
+      end
+    end
   end
 
   always @(posedge c200m) begin
