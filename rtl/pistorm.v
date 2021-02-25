@@ -7,7 +7,7 @@ module pistorm(
     output reg      PI_IPL_ZERO,        // GPIO1
     input   [1:0]   PI_A,       // GPIO[3..2]
     input           PI_CLK,     // GPIO4
-    input           PI_UNUSED,  // GPIO5
+    output reg      PI_RESET,   // GPIO5
     input           PI_RD,      // GPIO6
     input           PI_WR,      // GPIO7
     inout   [15:0]  PI_D,       // GPIO[23..8]
@@ -60,6 +60,8 @@ module pistorm(
   initial begin
     PI_TXN_IN_PROGRESS <= 1'b0;
     PI_IPL_ZERO <= 1'b0;
+
+    PI_RESET <= 1'b0;
 
     M68K_FC <= 3'd0;
 
@@ -176,7 +178,28 @@ module pistorm(
     if (ipl_2 == ipl_1)
       ipl <= ipl_2;
 
-    PI_IPL_ZERO <= ipl == 3'd0;
+//    PI_IPL_ZERO <= ipl == 3'd0;
+  end
+
+  reg [3:0] ipl_counter = 4'd0;
+
+  always @(negedge c7m) begin
+    if (ipl == 3'd0) begin
+      if (ipl_counter == 4'd8) begin
+        PI_IPL_ZERO <= 1'd1;
+      end
+      else  begin
+        ipl_counter <= ipl_counter + 4'd1;
+		end
+	 end
+	 else begin
+      ipl_counter <= 4'd0;
+      PI_IPL_ZERO <= 1'd0;
+	 end
+  end
+
+  always @(posedge c200m) begin
+    PI_RESET <= reset_out ? 1'b1 : M68K_RESET_n;
   end
 
   reg [3:0] e_counter = 4'd0;
