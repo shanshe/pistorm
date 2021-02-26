@@ -169,36 +169,46 @@ module pistorm(
   reg [2:0] ipl_1;
   reg [2:0] ipl_2;
 
-  always @(posedge c200m) begin
-    if (c7m_falling) begin
-      ipl_1 <= ~M68K_IPL_n;
-      ipl_2 <= ipl_1;
-    end
-
-    if (ipl_2 == ipl_1)
-      ipl <= ipl_2;
-
+//  always @(posedge c200m) begin
+//    if (c7m_falling) begin
+//      ipl_1 <= ~M68K_IPL_n;
+//      ipl_2 <= ipl_1;
+//    end
+//
+//    if (ipl_2 == ipl_1)
+//      ipl <= ipl_2;
+//
 //    PI_IPL_ZERO <= ipl == 3'd0;
-  end
+//  end
 
-  reg [3:0] ipl_counter = 4'd0;
+  reg [1:0] state = 2'd0;
 
-  always @(posedge c200m) begin
-    if (c7m_falling) begin
-      if (ipl == 3'd0) begin
-        if (ipl_counter == 4'd8) begin
-          PI_IPL_ZERO <= 1'd1;
-        end
-        else begin
-          ipl_counter <= ipl_counter + 4'd1;
-        end
-      end
-      else begin
-        ipl_counter <= 4'd0;
-        PI_IPL_ZERO <= 1'd0;
-      end
+  always @(negedge c7m) begin
+    if (c7m_falling  && (state == 2'd3)) begin
+      ipl <= ~M68K_IPL_n;
     end
+
+    PI_IPL_ZERO <= ipl == 3'd0;
   end
+
+//  reg [3:0] ipl_counter = 4'd0;
+//
+//  always @(posedge c200m) begin
+//    if (c7m_falling) begin
+//      if (ipl == 3'd0) begin
+//        if (ipl_counter == 4'd8) begin
+//          PI_IPL_ZERO <= 1'd1;
+//        end
+//        else begin
+//          ipl_counter <= ipl_counter + 4'd1;
+//		  end
+//	   end
+//	   else begin
+//        ipl_counter <= 4'd0;
+//        PI_IPL_ZERO <= 1'd0;
+//	   end
+//    end
+//  end
 
   always @(posedge c200m) begin
     PI_RESET <= reset_out ? 1'b1 : M68K_RESET_n;
@@ -220,7 +230,7 @@ module pistorm(
       M68K_E <= 1'b1;
   end
 
-  reg [1:0] state = 2'd0;
+//  reg [1:0] state = 2'd0;
   reg wait_req = 1'b1;
   reg wait_dtack = 1'b0;
 

@@ -2191,7 +2191,7 @@ void m68040_fpu_op1()
 
 				case 3:	// (An)+
 					addr = EA_AY_PI_32();
-					m68040_do_frestore(addr, reg); // FIXME: -1 was reg
+					m68040_do_frestore(addr, reg);
 					break;
 
 				case 5: // (D16, An)
