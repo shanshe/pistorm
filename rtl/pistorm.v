@@ -185,7 +185,7 @@ module pistorm(
 
   always @(negedge c7m) begin
     ipl <= ~M68K_IPL_n;
-    PI_IPL_ZERO <= (~M68K_IPL_n) == 3'd0;
+    PI_IPL_ZERO <= ipl == 3'd0;
   end
 
 //  reg [3:0] ipl_counter = 4'd0;
