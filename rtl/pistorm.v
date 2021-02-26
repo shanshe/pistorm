@@ -184,7 +184,7 @@ module pistorm(
   reg [1:0] state = 2'd0;
 
   always @(negedge c7m) begin
-    if (c7m_falling  && (state == 2'd3)) begin
+    if (c7m_falling  && (state == 2'd2)) begin
       ipl <= ~M68K_IPL_n;
     end
 
