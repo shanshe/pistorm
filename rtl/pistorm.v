@@ -185,7 +185,7 @@ module pistorm(
 
   always @(negedge c7m) begin
     if (ipl == 3'd0) begin
-      if (ipl_counter == 4'd2) begin
+      if (ipl_counter == 4'd4) begin
         PI_IPL_ZERO <= 1'd1;
       end
       else begin
