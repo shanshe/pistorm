@@ -187,7 +187,7 @@ module pistorm(
     if (c7m_falling) begin
       if (ipl != 3'd0) begin
         if (ipl_counter == 4'd2) begin
-          PI_IPL_ZERO <= 1'd1;
+          PI_IPL_ZERO <= 1'd0;
         end
         else begin
           ipl_counter <= ipl_counter + 4'd1;
@@ -195,7 +195,7 @@ module pistorm(
 	   end
       else begin
         ipl_counter <= 4'd0;
-        PI_IPL_ZERO <= 1'd0;
+        PI_IPL_ZERO <= 1'd1;
 		end
     end
   end
