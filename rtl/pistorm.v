@@ -186,7 +186,7 @@ module pistorm(
   always @(posedge c200m) begin
     if (c7m_falling) begin
       if (ipl == 3'd0) begin
-        if (ipl_counter == 4'd8) begin
+        if (ipl_counter == 4'd3) begin
           PI_IPL_ZERO <= 1'd1;
         end
         else begin
