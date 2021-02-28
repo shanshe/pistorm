@@ -175,12 +175,12 @@ module pistorm(
       ipl_2 <= ipl_1;
     end
 
-    if (ipl_2 == ipl_1)
+    if (ipl_2 == ipl_1) begin
       ipl <= ipl_2;
-
-//    PI_IPL_ZERO <= ipl == 3'd0;
-    if (ipl != ipl_1)
+    end
+    else begin
       ipl_reg <= 1'b1;
+    end
     PI_IPL_ZERO <= ipl_reg;
   end
 /*
