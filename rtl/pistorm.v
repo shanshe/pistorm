@@ -179,7 +179,7 @@ module pistorm(
       ipl <= ipl_2;
 
 //    PI_IPL_ZERO <= ipl == 3'd0;
-    PI_IPL_ZERO <= ipl == ipl_2;
+    PI_IPL_ZERO <= ipl == ipl_1;
   end
 /*
   reg [3:0] ipl_counter = 4'd0;
