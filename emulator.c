@@ -1,3 +1,4 @@
+
 #include <assert.h>
 #include <dirent.h>
 #include <endian.h>
@@ -85,7 +86,7 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
-#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop");
+#define NOP //asm("nop"); asm("nop"); asm("nop"); asm("nop");
 
 // Configurable emulator options
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
@@ -337,23 +338,13 @@ int main(int argc, char *argv[]) {
     }
 
     if (irq) {
-      unsigned int status = read_reg();
-      if (((status & 0xe000) >> 13) != last_irq) {
-        last_irq = ((status & 0xe000) >> 13);
-        serv_irq++;
-        M68K_SET_IRQ(last_irq);
-      }
+      last_irq = ((read_reg() & 0xe000) >> 13);
+      M68K_SET_IRQ(last_irq);
     }
     else if (gayleirq && int2_enabled) {
-      write16(0xdff09c, 0x8000 | (1 << 3));
+      write16(0xdff09c, 0x8000 | (1 << 3) && last_irq != 2);
       last_irq = 2;
       M68K_SET_IRQ(2);
-    }
-    else {
-      if (last_irq != 0) {
-        last_irq = 0;
-        M68K_SET_IRQ(0);
-      }
     }
 
     if(do_reset)

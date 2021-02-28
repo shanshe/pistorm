@@ -168,7 +168,7 @@ module pistorm(
   always @(posedge c200m) begin
     if (rd_rising && PI_A == REG_STATUS) begin
       data_out <= {ipl, 13'd0};
-		ipl_reg <= 1'b0;
+		ipl_reg <= 1'b1;
     end
     if (c7m_falling) begin
       ipl_1 <= ~M68K_IPL_n;
@@ -179,30 +179,11 @@ module pistorm(
       ipl <= ipl_2;
     end
     else begin
-      ipl_reg <= 1'b1;
+      ipl_reg <= 1'b0;
     end
     PI_IPL_ZERO <= ipl_reg;
   end
-/*
-  reg [3:0] ipl_counter = 4'd0;
 
-  always @(posedge c200m) begin
-    if (c7m_falling) begin
-      if (ipl == 3'd0) begin
-        if (ipl_counter == 4'd3) begin
-          PI_IPL_ZERO <= 1'd1;
-        end
-        else begin
-          ipl_counter <= ipl_counter + 4'd1;
-        end
-	   end
-      else begin
-        ipl_counter <= 4'd0;
-        PI_IPL_ZERO <= 1'd0;
-		end
-    end
-  end
-*/
   always @(posedge c200m) begin
     PI_RESET <= reset_out ? 1'b1 : M68K_RESET_n;
   end
