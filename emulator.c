@@ -117,7 +117,7 @@ void *iplThread(void *args) {
       }
       amiga_reset_last=amiga_reset;
     }
-    if (!gpio_get_irq()) {
+    if (!!gpio_get_irq()) {
       irq = 1;
       M68K_END_TIMESLICE;
     }
