@@ -179,8 +179,9 @@ module pistorm(
       ipl <= ipl_2;
 
 //    PI_IPL_ZERO <= ipl == 3'd0;
+    PI_IPL_ZERO <= ipl == ipl_2;
   end
-
+/*
   reg [3:0] ipl_counter = 4'd0;
 
   always @(posedge c200m) begin
@@ -199,7 +200,7 @@ module pistorm(
 		end
     end
   end
-
+*/
   always @(posedge c200m) begin
     PI_RESET <= reset_out ? 1'b1 : M68K_RESET_n;
   end
