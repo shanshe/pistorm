@@ -58,12 +58,6 @@ module pistorm(
   localparam REG_ADDR_HI = 2'd2;
   localparam REG_STATUS = 2'd3;
 
-  reg [2:0] ipl;
-  reg [2:0] ipl_1;
-  reg [2:0] ipl_2;
-  reg [2:0] ipl_3;
-  reg [2:0] last_ipl;
-  
   initial begin
     PI_TXN_IN_PROGRESS <= 1'b0;
     PI_IPL_ZERO <= 1'b0;
@@ -79,11 +73,6 @@ module pistorm(
 
     M68K_BG_n <= 1'b1;
 	 ipl_reg <= 1'b0;
-	 ipl <= 3'd0;
-	 ipl_1 <= 3'd0;
-	 ipl_2 <= 3'd0;
-	 ipl_3 <= 3'd0;
-	 last_ipl <= 3'd0;
   end
 
   reg [1:0] rd_sync;
@@ -172,12 +161,15 @@ module pistorm(
   wire c7m_rising = !c7m_sync[2] && c7m_sync[1];
   wire c7m_falling = c7m_sync[2] && !c7m_sync[1];
 
+  reg [2:0] ipl;
+  reg [2:0] ipl_1;
+  reg [2:0] ipl_2;
+  
   always @(posedge c200m) begin
     if (rd_rising && PI_A == REG_STATUS) begin
       data_out <= {ipl, 13'd0};
-      ipl_reg <= 1'b0;
+		ipl_reg <= 1'b0;
     end
-
     if (c7m_falling) begin
       ipl_1 <= ~M68K_IPL_n;
       ipl_2 <= ipl_1;
@@ -186,9 +178,7 @@ module pistorm(
     if (ipl_2 == ipl_1) begin
       ipl <= ipl_2;
     end
-
-    if (ipl != last_ipl) begin
-      last_ipl <= ipl;
+    else begin
       ipl_reg <= 1'b1;
     end
     PI_IPL_ZERO <= ipl_reg;
