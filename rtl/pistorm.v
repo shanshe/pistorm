@@ -177,15 +177,15 @@ module pistorm(
       data_out <= {ipl, 13'd0};
 		ipl_reg <= 1'b0;
     end
-    if (c7m_falling) begin
-//      if ((state == 2'd0)||(state == 2'd2)) begin
-        ipl_1 <= ~M68K_IPL_n;
-//      end
-		ipl_2 <= ipl_1;
-//      if (ipl_2 == ipl_1) begin
-        ipl_3 <= ipl_2;
+
+    ipl_1 <= ~M68K_IPL_n;
+    ipl_2 <= ipl_1;
+    ipl_3 <= ipl_2;
+
+    if ((state == 2'd0)||(state == 2'd2)) begin
+      if (c7m_falling) begin
         ipl <= ipl_3;
-//      end
+      end
     end
 
     if (ipl != last_ipl) begin
