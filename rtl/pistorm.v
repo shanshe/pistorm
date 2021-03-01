@@ -185,8 +185,8 @@ module pistorm(
     end
 
     if (ipl != last_ipl) begin
-      last_ipl=ipl;
-		ipl_reg <= 1'b1;
+      last_ipl <= ipl;
+      ipl_reg <= 1'b1;
     end
     PI_IPL_ZERO <= ipl_reg;
   end
