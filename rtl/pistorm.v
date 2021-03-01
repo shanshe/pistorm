@@ -182,11 +182,11 @@ module pistorm(
       ipl_1 <= ~M68K_IPL_n;
       ipl_2 <= ipl_1;
       ipl_3 <= ipl_2;
-      ipl <= ipl_3;
     end
 
-    if (ipl != last_ipl) begin
-      last_ipl <= ipl;
+    if (ipl_3 != last_ipl) begin
+      ipl <= ipl_3;
+      last_ipl <= ipl_3;
       ipl_reg <= 1'b1;
     end
     PI_IPL_ZERO <= ipl_reg;
