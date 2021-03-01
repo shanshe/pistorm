@@ -175,13 +175,14 @@ module pistorm(
   always @(posedge c200m) begin
     if (rd_rising && PI_A == REG_STATUS) begin
       data_out <= {ipl, 13'd0};
-		ipl_reg <= 1'b0;
+      ipl_reg <= 1'b0;
     end
 
     if (c7m_falling) begin
       ipl_1 <= ~M68K_IPL_n;
       ipl_2 <= ipl_1;
-      ipl <= ipl_2;
+      ipl_3 <= ipl_2;
+      ipl <= ipl_3;
     end
 
     if (ipl != last_ipl) begin
