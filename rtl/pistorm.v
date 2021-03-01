@@ -176,9 +176,9 @@ module pistorm(
 		ipl_reg <= 1'b0;
     end
     if (c7m_falling) begin
-      if (state == 2'd3) begin
+//      if (state == 2'd3) begin
         ipl_1 <= ~M68K_IPL_n;
-      end
+//      end
 		ipl_2 <= ipl_1;
       if (ipl_2 == ipl_1) begin
         ipl <= ipl_2;
