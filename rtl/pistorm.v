@@ -181,12 +181,14 @@ module pistorm(
     if (c7m_falling) begin
       ipl_1 <= ~M68K_IPL_n;
       ipl_2 <= ipl_1;
-      ipl_3 <= ipl_2;
     end
 
-    if (ipl_2 != last_ipl) begin
+    if (ipl_2 == ipl_1) begin
       ipl <= ipl_2;
-      last_ipl <= ipl_2;
+    end
+
+    if (ipl != last_ipl) begin
+      last_ipl <= ipl;
       ipl_reg <= 1'b1;
     end
     PI_IPL_ZERO <= ipl_reg;
