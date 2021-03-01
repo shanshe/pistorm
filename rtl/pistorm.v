@@ -182,11 +182,11 @@ module pistorm(
     ipl_2 <= ipl_1;
     ipl_3 <= ipl_2;
 
-    if ((state == 2'd0)||(state == 2'd2)) begin
+//    if ((state == 2'd0)||(state == 2'd2)) begin
       if (c7m_falling) begin
         ipl <= ipl_3;
       end
-    end
+//    end
 
     if (ipl != last_ipl) begin
       last_ipl=ipl;
