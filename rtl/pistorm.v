@@ -61,6 +61,7 @@ module pistorm(
   reg [2:0] ipl;
   reg [2:0] ipl_1;
   reg [2:0] ipl_2;
+  reg [2:0] ipl_3;
   reg [2:0] last_ipl;
   
   initial begin
@@ -81,6 +82,7 @@ module pistorm(
 	 ipl <= 3'd0;
 	 ipl_1 <= 3'd0;
 	 ipl_2 <= 3'd0;
+	 ipl_3 <= 3'd0;
 	 last_ipl <= 3'd0;
   end
 
@@ -179,10 +181,10 @@ module pistorm(
 //      if ((state == 2'd0)||(state == 2'd2)) begin
         ipl_1 <= ~M68K_IPL_n;
 //      end
-//		ipl_2 <= ipl_1;
-		ipl <= ipl_1;
+		ipl_2 <= ipl_1;
 //      if (ipl_2 == ipl_1) begin
-//        ipl <= ipl_2;
+        ipl_3 <= ipl_2;
+        ipl <= ipl_3;
 //      end
     end
 
