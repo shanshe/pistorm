@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <dirent.h>
 #include <endian.h>
@@ -67,7 +66,7 @@ int mem_fd_gpclk;
 int irq;
 int gayleirq;
 
-#define MUSASHI_HAX
+//#define MUSASHI_HAX
 
 #ifdef MUSASHI_HAX
 #include "m68kcpu.h"
@@ -86,6 +85,15 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
+#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop");
+
+#define DEBUG_EMULATOR
+#ifdef DEBUG_EMULATOR
+#define DEBUG printf
+#else
+#define DEBUG(...)
+#endif
+
 // Configurable emulator options
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300, irq_status = 0;
@@ -93,40 +101,36 @@ struct emulator_config *cfg = NULL;
 char keyboard_file[256] = "/dev/input/event1";
 
 uint64_t trig_irq = 0, serv_irq = 0;
-unsigned int amiga_reset=0, amiga_reset_last=0;
-unsigned int do_reset=0;
+uint16_t irq_delay = 0;
 
 void *iplThread(void *args) {
   printf("IPL thread running\n");
+  uint16_t old_irq = 0;
   uint32_t value;
 
   while (1) {
-    /*amiga_reset=gpio_get_reset();
-    if(amiga_reset!=amiga_reset_last)
-    {
-      if(amiga_reset==0)
-      {
-        printf("Amiga Reset is down...\n");
-        do_reset=1;
-        M68K_END_TIMESLICE;
-      }
-      else
-      {
-        printf("Amiga Reset is up...\n");
-      }
-      amiga_reset_last=amiga_reset;
-    }*/
     value = *(gpio + 13);
-    if (!!(value & (1 << PIN_IPL_ZERO))) {
+
+    if (!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
+      old_irq = irq_delay;
+      NOP
       M68K_END_TIMESLICE;
     }
     else {
-      irq = 0;
+      if (irq) {
+        if (old_irq) {
+          old_irq--;
+        }
+        else {
+          irq = 0;
+        }
+        NOP
+        M68K_END_TIMESLICE;
+      }
     }
-    asm ("nop");
 
-    /*if (gayle_ide_enabled) {
+    if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
@@ -134,7 +138,14 @@ void *iplThread(void *args) {
       }
       else
         gayleirq = 0;
-    }*/
+    }
+    //usleep(0);
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    /*NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP*/
   }
   return args;
 }
@@ -182,6 +193,12 @@ void sigint_handler(int sig_num) {
 int main(int argc, char *argv[]) {
   int g;
   //const struct sched_param priority = {99};
+
+  if (argc > 1) {
+    printf ("FUG!\n");
+    irq_delay = atoi(argv[1]);
+    printf("Setting IRQ delay to %d loops (%s).\n", irq_delay, argv[1]);
+  }
 
   // Some command line switch stuffles
   for (g = 1; g < argc; g++) {
@@ -293,7 +310,7 @@ int main(int argc, char *argv[]) {
   cpu_pulse_reset();
 
   char c = 0, c_code = 0, c_type = 0;
-  uint32_t last_irq = 0;
+  uint32_t last_irq = 0, last_last_irq = 0;
 
   pthread_t id;
   int err;
@@ -326,20 +343,31 @@ int main(int argc, char *argv[]) {
     }
 
     if (irq) {
-      last_irq = ((read_reg() & 0xe000) >> 13);
-      M68K_SET_IRQ(last_irq);
+      while (irq) {
+        last_irq = ((read_reg() & 0xe000) >> 13);
+        if (last_irq != last_last_irq) {
+          last_last_irq = last_irq;
+          M68K_SET_IRQ(last_irq);
+        }
+        m68k_execute(5);
+      }
+      if (gayleirq && int2_enabled) {
+        write16(0xdff09c, 0x8000 | (1 << 3) && last_irq != 2);
+        last_last_irq = last_irq;
+        last_irq = 2;
+        M68K_SET_IRQ(2);
+      }
+      M68K_SET_IRQ(0);
+      last_last_irq = 0;
     }
-    else if (gayleirq && int2_enabled) {
-      write16(0xdff09c, 0x8000 | (1 << 3) && last_irq != 2);
-      last_irq = 2;
-      M68K_SET_IRQ(2);
-    }
+    /*else {
+      if (last_irq != 0) {
+        M68K_SET_IRQ(0);
+        last_last_irq = last_irq;
+        last_irq = 0;
+      }
+    }*/
 
-    if(do_reset)
-    {
-       cpu_pulse_reset();
-       do_reset=0;
-    }
     while (get_key_char(&c, &c_code, &c_type)) {
       if (c && c == cfg->keyboard_toggle_key && !kb_hook_enabled) {
         kb_hook_enabled = 1;
@@ -366,9 +394,9 @@ int main(int argc, char *argv[]) {
               printf("unknown.\n");
               break;
           }*/
-          if (queue_keypress(c_code, c_type, cfg->platform->id) && int2_enabled) {
-            last_irq = 2;
-            M68K_SET_IRQ(2);
+          if (queue_keypress(c_code, c_type, cfg->platform->id) && int2_enabled && last_irq != 2) {
+            //last_irq = 0;
+            //M68K_SET_IRQ(2);
           }
         }
       }
@@ -440,6 +468,8 @@ void cpu_pulse_reset(void) {
   if (cfg->platform->handle_reset)
     cfg->platform->handle_reset(cfg);
 
+  
+  m68k_write_memory_16(INTENA, 0x7FFF);
   ovl = 1;
   m68k_write_memory_8(0xbfe201, 0x0001);  // AMIGA OVL
   m68k_write_memory_8(0xbfe001, 0x0001);  // AMIGA OVL high (ROM@0x0)
@@ -528,19 +558,20 @@ unsigned int m68k_read_memory_8(unsigned int address) {
           send_keypress = 1;
       }
       if (send_keypress == 2) {
-        result |= 0x02;
+        //result |= 0x02;
         send_keypress = 0;
       }
       return result;
     }
     if (address == CIAADAT) {
-      if (send_keypress) {
+      //if (send_keypress) {
         uint8_t c = 0, t = 0;
         pop_queued_key(&c, &t);
         t ^= 0x01;
         result = ((c << 1) | t) ^ 0xFF;
         send_keypress = 2;
-      }
+        //M68K_SET_IRQ(0);
+      //}
       return result;
     }
   }
