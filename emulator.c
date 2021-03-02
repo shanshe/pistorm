@@ -76,7 +76,7 @@ void *iplThread(void *args) {
   printf("IPL thread running\n");
 
   while (1) {
-    if (!gpio_get_irq()) {
+    if (!!gpio_get_irq()) {
       irq = 1;
       m68k_end_timeslice();
     }

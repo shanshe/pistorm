@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Claude Schwarz
- * Copyright 2020 Niklas Ekström - rewrite in Verilog
+ * Copyright 2020 Niklas Ekstrom - rewrite in Verilog
  */
 module pistorm(
     output reg      PI_TXN_IN_PROGRESS, // GPIO0
     output reg      PI_IPL_ZERO,        // GPIO1
     input   [1:0]   PI_A,       // GPIO[3..2]
     input           PI_CLK,     // GPIO4
-    input           PI_UNUSED,  // GPIO5
+    output reg      PI_RESET,   // GPIO5
     input           PI_RD,      // GPIO6
     input           PI_WR,      // GPIO7
     inout   [15:0]  PI_D,       // GPIO[23..8]
@@ -51,6 +51,7 @@ module pistorm(
 
   wire c200m = PI_CLK;
   wire c7m = M68K_CLK;
+  reg ipl_reg;
 
   localparam REG_DATA = 2'd0;
   localparam REG_ADDR_LO = 2'd1;
@@ -61,6 +62,8 @@ module pistorm(
     PI_TXN_IN_PROGRESS <= 1'b0;
     PI_IPL_ZERO <= 1'b0;
 
+    PI_RESET <= 1'b0;
+
     M68K_FC <= 3'd0;
 
     M68K_RW <= 1'b1;
@@ -69,6 +72,7 @@ module pistorm(
     M68K_VMA_n <= 1'b1;
 
     M68K_BG_n <= 1'b1;
+	 ipl_reg <= 1'b0;
   end
 
   reg [1:0] rd_sync;
@@ -84,12 +88,6 @@ module pistorm(
 
   reg [15:0] data_out;
   assign PI_D = PI_A == REG_STATUS && PI_RD ? data_out : 16'bz;
-
-  always @(posedge c200m) begin
-    if (rd_rising && PI_A == REG_STATUS) begin
-      data_out <= {ipl, 13'd0};
-    end
-  end
 
   reg [15:0] status;
   wire reset_out = !status[1];
@@ -166,17 +164,28 @@ module pistorm(
   reg [2:0] ipl;
   reg [2:0] ipl_1;
   reg [2:0] ipl_2;
-
+  
   always @(posedge c200m) begin
+    if (rd_rising && PI_A == REG_STATUS) begin
+      data_out <= {ipl, 13'd0};
+		ipl_reg <= 1'b0;
+    end
     if (c7m_falling) begin
       ipl_1 <= ~M68K_IPL_n;
       ipl_2 <= ipl_1;
     end
 
-    if (ipl_2 == ipl_1)
+    if (ipl_2 == ipl_1) begin
       ipl <= ipl_2;
+    end
+    else begin
+      ipl_reg <= 1'b1;
+    end
+    PI_IPL_ZERO <= ipl_reg;
+  end
 
-    PI_IPL_ZERO <= ipl == 3'd0;
+  always @(posedge c200m) begin
+    PI_RESET <= reset_out ? 1'b1 : M68K_RESET_n;
   end
 
   reg [3:0] e_counter = 4'd0;
