@@ -71,6 +71,10 @@ extern "C" {
 #define M68K_IRQ_6    6
 #define M68K_IRQ_7    7
 
+#define M68K_SZ_LONG  0
+#define M68K_SZ_BYTE  1
+#define M68K_SZ_WORD  2
+
 
 /* Special interrupt acknowledge values.
  * Use these as special returns from the interrupt acknowledge callback
@@ -215,8 +219,6 @@ void m68k_add_rom_range(uint32_t addr, uint32_t upper, unsigned char *ptr);
  * Enable this functionality with M68K_SIMULATE_PD_WRITES in m68kconf.h.
  */
 void m68k_write_memory_32_pd(unsigned int address, unsigned int value);
-
-
 
 /* ======================================================================== */
 /* ============================== CALLBACKS =============================== */

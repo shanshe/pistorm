@@ -43,6 +43,7 @@ extern "C" {
 #include <endian.h>
 
 #include <setjmp.h>
+#include <stdio.h>
 
 /* ======================================================================== */
 /* ==================== ARCHITECTURE-DEPENDANT DEFINES ==================== */
@@ -144,12 +145,15 @@ typedef uint32 uint64;
 	}
 #endif /* UINT_MAX == 0xffffffff */
 
-
-
-
 /* ======================================================================== */
 /* ============================ GENERAL DEFINES =========================== */
 /* ======================================================================== */
+
+/* MMU constants */
+#define MMU_ATC_ENTRIES 22    // 68851 has 64, 030 has 22
+
+/* instruction cache constants */
+#define M68K_IC_SIZE 128
 
 /* Exception Vectors handled by emulation */
 #define EXCEPTION_RESET                    0
@@ -168,6 +172,7 @@ typedef uint32 uint64;
 #define EXCEPTION_SPURIOUS_INTERRUPT      24
 #define EXCEPTION_INTERRUPT_AUTOVECTOR    24
 #define EXCEPTION_TRAP_BASE               32
+#define EXCEPTION_MMU_CONFIGURATION       56 // only on 020/030
 
 /* Function codes set by CPU during data/address bus activity */
 #define FUNCTION_CODE_USER_DATA          1
@@ -177,7 +182,7 @@ typedef uint32 uint64;
 #define FUNCTION_CODE_CPU_SPACE          7
 
 /* CPU types for deciding what to emulate */
-#define CPU_TYPE_000	(0x00000001)
+#define CPU_TYPE_000    (0x00000001)
 #define CPU_TYPE_008    (0x00000002)
 #define CPU_TYPE_010    (0x00000004)
 #define CPU_TYPE_EC020  (0x00000008)
@@ -328,10 +333,10 @@ typedef uint32 uint64;
 #define CPU_TYPE         m68ki_cpu.cpu_type
 
 #define REG_DA           m68ki_cpu.dar /* easy access to data and address regs */
-#define REG_DA_SAVE           m68ki_cpu.dar_save
+#define REG_DA_SAVE      m68ki_cpu.dar_save
 #define REG_D            m68ki_cpu.dar
 #define REG_A            (m68ki_cpu.dar+8)
-#define REG_PPC 		 m68ki_cpu.ppc
+#define REG_PPC          m68ki_cpu.ppc
 #define REG_PC           m68ki_cpu.pc
 #define REG_SP_BASE      m68ki_cpu.sp
 #define REG_USP          m68ki_cpu.sp[0]
@@ -381,21 +386,22 @@ typedef uint32 uint64;
 #define CYC_MOVEM_L      m68ki_cpu.cyc_movem_l
 #define CYC_SHIFT        m68ki_cpu.cyc_shift
 #define CYC_RESET        m68ki_cpu.cyc_reset
-#define HAS_PMMU	 m68ki_cpu.has_pmmu
-#define PMMU_ENABLED	 m68ki_cpu.pmmu_enabled
-#define RESET_CYCLES	 m68ki_cpu.reset_cycles
+#define HAS_PMMU         m68ki_cpu.has_pmmu
+#define HAS_FPU          m68ki_cpu.has_fpu
+#define PMMU_ENABLED     m68ki_cpu.pmmu_enabled
+#define RESET_CYCLES     m68ki_cpu.reset_cycles
 
 
-#define CALLBACK_INT_ACK     m68ki_cpu.int_ack_callback
-#define CALLBACK_BKPT_ACK    m68ki_cpu.bkpt_ack_callback
-#define CALLBACK_RESET_INSTR m68ki_cpu.reset_instr_callback
+#define CALLBACK_INT_ACK      m68ki_cpu.int_ack_callback
+#define CALLBACK_BKPT_ACK     m68ki_cpu.bkpt_ack_callback
+#define CALLBACK_RESET_INSTR  m68ki_cpu.reset_instr_callback
 #define CALLBACK_CMPILD_INSTR m68ki_cpu.cmpild_instr_callback
 #define CALLBACK_RTE_INSTR    m68ki_cpu.rte_instr_callback
 #define CALLBACK_TAS_INSTR    m68ki_cpu.tas_instr_callback
-#define CALLBACK_ILLG_INSTR    m68ki_cpu.illg_instr_callback
-#define CALLBACK_PC_CHANGED  m68ki_cpu.pc_changed_callback
-#define CALLBACK_SET_FC      m68ki_cpu.set_fc_callback
-#define CALLBACK_INSTR_HOOK  m68ki_cpu.instr_hook_callback
+#define CALLBACK_ILLG_INSTR   m68ki_cpu.illg_instr_callback
+#define CALLBACK_PC_CHANGED   m68ki_cpu.pc_changed_callback
+#define CALLBACK_SET_FC       m68ki_cpu.set_fc_callback
+#define CALLBACK_INSTR_HOOK   m68ki_cpu.instr_hook_callback
 
 
 
@@ -405,7 +411,7 @@ typedef uint32 uint64;
 
 /* Disable certain comparisons if we're not using all CPU types */
 #if M68K_EMULATE_040
-#define CPU_TYPE_IS_040_PLUS(A)    ((A) & (CPU_TYPE_040 | CPU_TYPE_EC040))
+#define CPU_TYPE_IS_040_PLUS(A)    ((A) & (CPU_TYPE_040 | CPU_TYPE_EC040 | CPU_TYPE_LC040))
 	#define CPU_TYPE_IS_040_LESS(A)    1
 #else
 	#define CPU_TYPE_IS_040_PLUS(A)    0
@@ -413,7 +419,7 @@ typedef uint32 uint64;
 #endif
 
 #if M68K_EMULATE_030
-#define CPU_TYPE_IS_030_PLUS(A)    ((A) & (CPU_TYPE_030 | CPU_TYPE_EC030 | CPU_TYPE_040 | CPU_TYPE_EC040))
+#define CPU_TYPE_IS_030_PLUS(A)    ((A) & (CPU_TYPE_030 | CPU_TYPE_EC030 | CPU_TYPE_040 | CPU_TYPE_EC040 | CPU_TYPE_LC040))
 #define CPU_TYPE_IS_030_LESS(A)    1
 #else
 #define CPU_TYPE_IS_030_PLUS(A)	0
@@ -421,7 +427,7 @@ typedef uint32 uint64;
 #endif
 
 #if M68K_EMULATE_020
-#define CPU_TYPE_IS_020_PLUS(A)    ((A) & (CPU_TYPE_020 | CPU_TYPE_030 | CPU_TYPE_EC030 | CPU_TYPE_040 | CPU_TYPE_EC040))
+#define CPU_TYPE_IS_020_PLUS(A)    ((A) & (CPU_TYPE_020 | CPU_TYPE_030 | CPU_TYPE_EC030 | CPU_TYPE_040 | CPU_TYPE_EC040 | CPU_TYPE_LC040))
 	#define CPU_TYPE_IS_020_LESS(A)    1
 #else
 	#define CPU_TYPE_IS_020_PLUS(A)    0
@@ -429,7 +435,7 @@ typedef uint32 uint64;
 #endif
 
 #if M68K_EMULATE_EC020
-#define CPU_TYPE_IS_EC020_PLUS(A)  ((A) & (CPU_TYPE_EC020 | CPU_TYPE_020 | CPU_TYPE_030 | CPU_TYPE_EC030 | CPU_TYPE_040 | CPU_TYPE_EC040))
+#define CPU_TYPE_IS_EC020_PLUS(A)  ((A) & (CPU_TYPE_EC020 | CPU_TYPE_020 | CPU_TYPE_030 | CPU_TYPE_EC030 | CPU_TYPE_040 | CPU_TYPE_EC040 | CPU_TYPE_LC040))
 	#define CPU_TYPE_IS_EC020_LESS(A)  ((A) & (CPU_TYPE_000 | CPU_TYPE_010 | CPU_TYPE_EC020))
 #else
 	#define CPU_TYPE_IS_EC020_PLUS(A)  CPU_TYPE_IS_020_PLUS(A)
@@ -438,7 +444,7 @@ typedef uint32 uint64;
 
 #if M68K_EMULATE_010
 	#define CPU_TYPE_IS_010(A)         ((A) == CPU_TYPE_010)
-#define CPU_TYPE_IS_010_PLUS(A)    ((A) & (CPU_TYPE_010 | CPU_TYPE_EC020 | CPU_TYPE_020 | CPU_TYPE_EC030 | CPU_TYPE_030 | CPU_TYPE_040 | CPU_TYPE_EC040))
+#define CPU_TYPE_IS_010_PLUS(A)    ((A) & (CPU_TYPE_010 | CPU_TYPE_EC020 | CPU_TYPE_020 | CPU_TYPE_EC030 | CPU_TYPE_030 | CPU_TYPE_040 | CPU_TYPE_EC040 | CPU_TYPE_LC040))
 #define CPU_TYPE_IS_010_LESS(A)    ((A) & (CPU_TYPE_000 | CPU_TYPE_008 | CPU_TYPE_010))
 #else
 	#define CPU_TYPE_IS_010(A)         0
@@ -960,7 +966,8 @@ typedef struct
 	uint sr_mask;      /* Implemented status register bits */
 	uint instr_mode;   /* Stores whether we are in instruction mode or group 0/1 exception mode */
 	uint run_mode;     /* Stores whether we are processing a reset, bus error, address error, or something else */
-	int    has_pmmu;     /* Indicates if a PMMU available (yes on 030, 040, no on EC030) */
+	int    has_pmmu;   /* Indicates if a PMMU available (yes on 030, 040, no on EC030) */
+	int    has_fpu;    /* Indicates if a FPU available */
 	int    pmmu_enabled; /* Indicates if the PMMU is enabled */
 	int    fpu_just_reset; /* Indicates the FPU was just reset */
 	uint reset_cycles;
