@@ -121,7 +121,6 @@ void *iplThread(void *args) {
       if (!!gpio_get_irq()) {
         irq = 1;
         M68K_END_TIMESLICE;
-        usleep(0);
       }
     }
 
@@ -134,7 +133,7 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
-    //usleep(0);
+    usleep(0);
     NOP NOP NOP NOP NOP NOP
     NOP NOP NOP NOP NOP NOP
     NOP NOP NOP NOP NOP NOP
