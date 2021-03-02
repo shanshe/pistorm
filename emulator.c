@@ -99,7 +99,6 @@ void *iplThread(void *args) {
   printf("IPL thread running\n");
 
   while (1) {
-    if (!!gpio_get_irq()) {
     amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
