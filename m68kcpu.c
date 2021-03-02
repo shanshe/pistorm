@@ -40,7 +40,7 @@
 
 extern void m68040_fpu_op0(void);
 extern void m68040_fpu_op1(void);
-extern void m68881_mmu_ops();
+extern void m68851_mmu_ops();
 extern unsigned char m68ki_cycles[][0x10000];
 extern void (*m68ki_instruction_jump_table[0x10000])(void); /* opcode handler jump table */
 extern void m68ki_build_opcode_table(void);
@@ -1126,6 +1126,11 @@ void m68k_pulse_reset(void)
 {
 	/* Disable the PMMU/HMMU on reset, if any */
 	m68ki_cpu.pmmu_enabled = 0;
+//	m68ki_cpu.hmmu_enabled = 0;
+
+	m68ki_cpu.mmu_tc = 0;
+	m68ki_cpu.mmu_tt0 = 0;
+	m68ki_cpu.mmu_tt1 = 0;
 
 	/* Clear all stop levels and eat up all remaining cycles */
 	CPU_STOPPED = 0;
@@ -1161,6 +1166,15 @@ void m68k_pulse_reset(void)
 	CPU_RUN_MODE = RUN_MODE_NORMAL;
 
 	RESET_CYCLES = CYC_EXCEPTION[EXCEPTION_RESET];
+
+	/* flush the MMU's cache */
+	pmmu_atc_flush();
+
+	if(CPU_TYPE_IS_EC020_PLUS(CPU_TYPE))
+	{
+		// clear instruction cache
+		m68ki_ic_clear();
+	}
 }
 
 /* Pulse the HALT line on the CPU */
