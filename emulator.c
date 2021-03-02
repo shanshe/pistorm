@@ -116,13 +116,13 @@ void *iplThread(void *args) {
       }
       amiga_reset_last=amiga_reset;
     }
-    if(irq==0)
+    do
     {
       if (!!gpio_get_irq()) {
         irq = 1;
         M68K_END_TIMESLICE;
       }
-    }
+    }while(irq==1);
 
     if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
