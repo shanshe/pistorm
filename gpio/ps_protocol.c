@@ -1,7 +1,7 @@
 /*
   Original Copyright 2020 Claude Schwarz
   Code reorganized and rewritten by 
-  Niklas Ekström 2021 (https://github.com/niklasekstrom)
+  Niklas Ekstrom 2021 (https://github.com/niklasekstrom)
 */
 
 #include <errno.h>
@@ -291,3 +291,9 @@ void ps_update_irq() {
 
   m68k_set_irq(ipl);
 }
+
+unsigned int ps_get_reset() {
+  unsigned int value = *(gpio + 13);
+  return (!!(value & (1 << PIN_RESET)));
+}
+

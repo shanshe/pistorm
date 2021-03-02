@@ -136,7 +136,7 @@ reinit_sdl:;
 
     uint64_t frame_start = 0, frame_end = 0;
     float elapsed = 0.0f;
-
+    SDL_ShowCursor(SDL_DISABLE);
     while (1) {
         if (renderer && win && img) {
             frame_start = SDL_GetPerformanceCounter();
