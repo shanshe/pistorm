@@ -98,9 +98,10 @@ unsigned int do_reset=0;
 
 void *iplThread(void *args) {
   printf("IPL thread running\n");
+  uint32_t value;
 
   while (1) {
-    amiga_reset=gpio_get_reset();
+    /*amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
       if(amiga_reset==0)
@@ -114,8 +115,9 @@ void *iplThread(void *args) {
         printf("Amiga Reset is up...\n");
       }
       amiga_reset_last=amiga_reset;
-    }
-    if (!gpio_get_irq()) {
+    }*/
+    value = *(gpio + 13);
+    if (!!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
       M68K_END_TIMESLICE;
     }
@@ -124,7 +126,7 @@ void *iplThread(void *args) {
     }
     asm ("nop");
 
-    if (gayle_ide_enabled) {
+    /*if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
@@ -132,7 +134,7 @@ void *iplThread(void *args) {
       }
       else
         gayleirq = 0;
-    }
+    }*/
   }
   return args;
 }
