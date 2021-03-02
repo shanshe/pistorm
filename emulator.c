@@ -120,6 +120,7 @@ void *iplThread(void *args) {
         irq = 1;
         M68K_END_TIMESLICE;
       }
+      usleep(1);
     }while(irq==1);
 
     if (gayle_ide_enabled) {
