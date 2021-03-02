@@ -118,9 +118,19 @@ void *iplThread(void *args) {
     }
     if (!!gpio_get_irq()) {
       irq = 1;
-      NOP
       M68K_END_TIMESLICE;
-    }
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP
+      NOP NOP NOP NOP NOP NOP    }
     else {
       irq = 0;
     }
