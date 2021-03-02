@@ -85,7 +85,7 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
-#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop");
+#define NOP //asm("nop"); asm("nop"); asm("nop"); asm("nop");
 
 // Configurable emulator options
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
@@ -120,7 +120,8 @@ void *iplThread(void *args) {
     {
       if (!!gpio_get_irq()) {
         irq = 1;
-         M68K_END_TIMESLICE;
+        M68K_END_TIMESLICE;
+        usleep(0);
       }
     }
 
