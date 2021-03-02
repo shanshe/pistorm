@@ -131,6 +131,7 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
+    usleep(0);
   }
   return args;
 }
