@@ -116,23 +116,12 @@ void *iplThread(void *args) {
       }
       amiga_reset_last=amiga_reset;
     }
-    if (!!gpio_get_irq()) {
-      irq = 1;
-      M68K_END_TIMESLICE;
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP
-      NOP NOP NOP NOP NOP NOP    }
-    else {
-      irq = 0;
+    if(irq==0)
+    {
+      if (!!gpio_get_irq()) {
+        irq = 1;
+         M68K_END_TIMESLICE;
+      }
     }
 
     if (gayle_ide_enabled) {
@@ -145,6 +134,18 @@ void *iplThread(void *args) {
         gayleirq = 0;
     }
     //usleep(0);
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
   }
   return args;
 }
@@ -336,6 +337,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (irq) {
+      irq=0;
       last_irq = ((read_reg() & 0xe000) >> 13);
       M68K_SET_IRQ(last_irq);
     }
