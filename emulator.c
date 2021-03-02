@@ -132,6 +132,7 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
+  }
   return args;
 }
 
