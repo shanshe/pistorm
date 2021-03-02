@@ -85,8 +85,6 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
-#define NOP //asm("nop"); asm("nop"); asm("nop"); asm("nop");
-
 // Configurable emulator options
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300, irq_status = 0;
@@ -133,19 +131,6 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
-    usleep(0);
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
   }
   return args;
 }
