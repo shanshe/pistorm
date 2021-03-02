@@ -67,7 +67,7 @@ int mem_fd_gpclk;
 int irq;
 int gayleirq;
 
-//#define MUSASHI_HAX
+#define MUSASHI_HAX
 
 #ifdef MUSASHI_HAX
 #include "m68kcpu.h"
@@ -98,32 +98,35 @@ unsigned int do_reset=0;
 
 void *iplThread(void *args) {
   printf("IPL thread running\n");
+  uint32_t value;
 
   while (1) {
-    amiga_reset=gpio_get_reset();
+    /*amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
       if(amiga_reset==0)
       {
         printf("Amiga Reset is down...\n");
         do_reset=1;
-        m68k_end_timeslice();
+        M68K_END_TIMESLICE;
       }
       else
       {
         printf("Amiga Reset is up...\n");
       }
       amiga_reset_last=amiga_reset;
-    }
-    if (!!gpio_get_irq()) {
+    }*/
+    value = *(gpio + 13);
+    if (!!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
       M68K_END_TIMESLICE;
     }
     else {
       irq = 0;
     }
+    asm ("nop");
 
-    if (gayle_ide_enabled) {
+    /*if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
@@ -131,7 +134,7 @@ void *iplThread(void *args) {
       }
       else
         gayleirq = 0;
-    }
+    }*/
   }
   return args;
 }
@@ -290,7 +293,7 @@ int main(int argc, char *argv[]) {
   cpu_pulse_reset();
 
   char c = 0, c_code = 0, c_type = 0;
-  uint32_t last_irq = 0,last_last_irq=0;
+  uint32_t last_irq = 0;
 
   pthread_t id;
   int err;
@@ -327,8 +330,7 @@ int main(int argc, char *argv[]) {
       M68K_SET_IRQ(last_irq);
     }
     else if (gayleirq && int2_enabled) {
-      write16(0xdff09c, 0x8000 | (1 << 3) && last_irq != 2);
-      last_last_irq = last_irq;
+      write16(0xdff09c, 0x8000 | (1 << 3) );//&& last_irq != 2); FIXME correct?
       last_irq = 2;
       M68K_SET_IRQ(2);
     }
