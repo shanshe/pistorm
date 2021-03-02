@@ -107,7 +107,7 @@ void *iplThread(void *args) {
       {
         printf("Amiga Reset is down...\n");
         do_reset=1;
-        m68k_end_timeslice();
+        M68K_END_TIMESLICE;
       }
       else
       {
@@ -122,6 +122,7 @@ void *iplThread(void *args) {
     else {
       irq = 0;
     }
+    asm ("nop");
 
     if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
