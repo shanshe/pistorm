@@ -125,7 +125,7 @@ void *iplThread(void *args) {
       irq = 0;
     }
     asm ("nop");
-
+usleep(1);
     /*if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
