@@ -133,8 +133,8 @@ usleep(0);
         M68K_END_TIMESLICE;
       }
       else
-        gayleirq = 0;*/
-    }
+        gayleirq = 0;
+    }*/
   }
   return args;
 }
