@@ -101,7 +101,7 @@ void *iplThread(void *args) {
   uint32_t value;
 
   while (1) {
-    /*amiga_reset=gpio_get_reset();
+    amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
       if(amiga_reset==0)
@@ -115,7 +115,7 @@ void *iplThread(void *args) {
         printf("Amiga Reset is up...\n");
       }
       amiga_reset_last=amiga_reset;
-    }*/
+    }
     value = *(gpio + 13);
     if (!!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
@@ -125,8 +125,8 @@ void *iplThread(void *args) {
       irq = 0;
     }
     asm ("nop");
-usleep(1);
-    /*if (gayle_ide_enabled) {
+usleep(0);
+    if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
@@ -134,7 +134,7 @@ usleep(1);
       }
       else
         gayleirq = 0;
-    }*/
+    }
   }
   return args;
 }
@@ -326,8 +326,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (irq) {
-      last_irq = ((read_reg() & 0xe000) >> 13);
-      M68K_SET_IRQ(last_irq);
+//      while (irq)
+      unsigned int ipl_count;
+      do
+      {
+        unsigned int status=read_reg();
+        ipl_count=status&0x2F;
+        if(ipl_count>0) {
+          last_irq = ((status & 0xe000) >> 13);
+          M68K_SET_IRQ(last_irq);
+          m68k_execute(5);
+        }
+      }while(ipl_count>1);
     }
     else if (gayleirq && int2_enabled) {
       write16(0xdff09c, 0x8000 | (1 << 3) );//&& last_irq != 2); FIXME correct?

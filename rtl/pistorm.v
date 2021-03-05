@@ -63,9 +63,9 @@ module pistorm #(FIFO_DEPTH = 64)(
   reg [2:0] last_ipl = 3'd0;
 
   reg [2:0] ipl_vec[FIFO_DEPTH - 1: 0];
-  reg [8:0] rd_ipl_pt = 0;
-  reg [8:0] wr_ipl_pt = 0;
-  reg [8:0] FIFO_cnt = 0;
+  reg [7:0] rd_ipl_pt = 0;
+  reg [7:0] wr_ipl_pt = 0;
+  reg [7:0] FIFO_cnt = 0;
 
   integer i;
 
@@ -108,7 +108,7 @@ module pistorm #(FIFO_DEPTH = 64)(
   wire wr_rising = !wr_sync[1] && wr_sync[0];
 
   reg [15:0] data_out;
-  assign PI_D = PI_A == REG_STATUS && PI_RD ? data_out : 16'bz;
+  assign PI_D = (PI_A == REG_STATUS) && PI_RD ? data_out : 16'bz;
 
   reg [15:0] status;
   wire reset_out = !status[1];
@@ -122,16 +122,16 @@ module pistorm #(FIFO_DEPTH = 64)(
   reg op_lds_n = 1'b1;
 
   always @(*) begin
-    LTCH_D_WR_U <= PI_A == REG_DATA && PI_WR;
-    LTCH_D_WR_L <= PI_A == REG_DATA && PI_WR;
+    LTCH_D_WR_U <= (PI_A == REG_DATA) && PI_WR;
+    LTCH_D_WR_L <= (PI_A == REG_DATA) && PI_WR;
 
-    LTCH_A_0 <= PI_A == REG_ADDR_LO && PI_WR;
-    LTCH_A_8 <= PI_A == REG_ADDR_LO && PI_WR;
+    LTCH_A_0 <= (PI_A == REG_ADDR_LO) && PI_WR;
+    LTCH_A_8 <= (PI_A == REG_ADDR_LO) && PI_WR;
 
-    LTCH_A_16 <= PI_A == REG_ADDR_HI && PI_WR;
-    LTCH_A_24 <= PI_A == REG_ADDR_HI && PI_WR;
+    LTCH_A_16 <= (PI_A == REG_ADDR_HI) && PI_WR;
+    LTCH_A_24 <= (PI_A == REG_ADDR_HI) && PI_WR;
 
-    LTCH_D_RD_OE_n <= !(PI_A == REG_DATA && PI_RD);
+    LTCH_D_RD_OE_n <= !((PI_A == REG_DATA) && PI_RD);
   end
 
   reg [2:0] s0_sync;
@@ -190,8 +190,6 @@ module pistorm #(FIFO_DEPTH = 64)(
 
   wire c7m_rising = !c7m_sync[2] && c7m_sync[1];
   wire c7m_falling = c7m_sync[2] && !c7m_sync[1];
-
-  reg active_1;
   
   always @(posedge c200m) begin
     if(reset_out) begin
@@ -200,20 +198,9 @@ module pistorm #(FIFO_DEPTH = 64)(
       FIFO_cnt <= 0;
 	 end
 	 else begin
-      if (rd_rising && PI_A == REG_STATUS) begin
-        data_out <= {ipl_vec[rd_ipl_pt],4'd0,FIFO_cnt};
-        if (FIFO_cnt != 0) begin
-          if(rd_ipl_pt == (FIFO_DEPTH - 1))begin
-            rd_ipl_pt <= 0;
-          end
-          else begin
-            rd_ipl_pt <= rd_ipl_pt + 1;
-          end
-          FIFO_cnt <= FIFO_cnt - 1;
-        end
-      end
+
       if (c7m_falling) begin
-//      if (rising_s5 /*|| rising_s0*/) begin
+//      if (rising_s5 || rising_s0) begin
         ipl_1 <= ~M68K_IPL_n;
         ipl_2 <= ipl_1;
       end
@@ -221,8 +208,6 @@ module pistorm #(FIFO_DEPTH = 64)(
       if (ipl_2 == ipl_1) begin
         ipl <= ipl_2;
       end
-//      else begin
-//      if (falling_s5 /*|| falling_s0*/) begin
       if (ipl != last_ipl) begin
         last_ipl <= ipl;
         if (FIFO_cnt < FIFO_DEPTH) begin
@@ -234,9 +219,28 @@ module pistorm #(FIFO_DEPTH = 64)(
             wr_ipl_pt <= wr_ipl_pt + 1;
           end
           FIFO_cnt <= FIFO_cnt + 1;
+          PI_IPL_ZERO <= 1'b1;
         end
       end
-      PI_IPL_ZERO <= (FIFO_cnt != 0);
+		else begin
+		if (rd_rising && (PI_A == REG_STATUS)) begin
+        data_out <= {ipl_vec[rd_ipl_pt],5'd0,FIFO_cnt};
+//        data_out <= {ipl,5'd0,FIFO_cnt};
+        if (FIFO_cnt > 0) begin
+          if(rd_ipl_pt == (FIFO_DEPTH - 1)) begin
+            rd_ipl_pt <= 0;
+          end
+          else begin
+            rd_ipl_pt <= rd_ipl_pt + 1;
+          end
+          FIFO_cnt <= FIFO_cnt - 1;
+			 PI_IPL_ZERO <= (FIFO_cnt > 1);
+        end
+		  else begin
+			 PI_IPL_ZERO <= 1'b0;
+		  end
+      end
+		end
     end
   end
 
@@ -304,12 +308,12 @@ module pistorm #(FIFO_DEPTH = 64)(
       end
 
       2'd2: begin // S4|Sw -> S5|Sw
-        if (!M68K_DTACK_n || (!M68K_VMA_n && e_counter == 4'd8)) begin
+        if (!M68K_DTACK_n || (!M68K_VMA_n && (e_counter == 4'd8))) begin
           wait_dtack <= 1'b0;
           state <= state + 2'd1;
         end
         else begin
-          if (!M68K_VPA_n && e_counter == 4'd2) begin
+          if (!M68K_VPA_n && (e_counter == 4'd2)) begin
             M68K_VMA_n <= 1'b0;
           end
           wait_dtack <= 1'b1;
