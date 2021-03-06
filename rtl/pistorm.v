@@ -136,23 +136,41 @@ module pistorm #(FIFO_DEPTH = 64)(
 
   reg [2:0] s0_sync;
   reg [2:0] s1_sync;
+  reg [2:0] s2_sync;
+  reg [2:0] s3_sync;
+  reg [2:0] s4_sync;
   reg [2:0] s5_sync;
+  reg [2:0] s6_sync;
   reg [2:0] s7_sync;
 
   always @(posedge c200m) begin
     s0_sync <= {s0_sync[1:0], S0};
     s1_sync <= {s1_sync[1:0], S1};
+    s2_sync <= {s2_sync[1:0], S2};
+    s3_sync <= {s3_sync[1:0], S3};
+    s4_sync <= {s4_sync[1:0], S4};
     s5_sync <= {s5_sync[1:0], S5};
+    s6_sync <= {s6_sync[1:0], S6};
     s7_sync <= {s7_sync[1:0], S7};
   end
 
-  wire rising_s1 = !s1_sync[2] && s1_sync[1];
-  wire rising_s7 = !s7_sync[2] && s7_sync[1];
 
   wire rising_s0 = !s0_sync[2] && s0_sync[1];
+  wire rising_s1 = !s1_sync[2] && s1_sync[1];
+  wire rising_s2 = !s2_sync[2] && s2_sync[1];
+  wire rising_s3 = !s3_sync[2] && s3_sync[1];
+  wire rising_s4 = !s4_sync[2] && s4_sync[1];
   wire rising_s5 = !s5_sync[2] && s5_sync[1];
+  wire rising_s6 = !s6_sync[2] && s6_sync[1];
+  wire rising_s7 = !s7_sync[2] && s7_sync[1];
   wire falling_s0 = s0_sync[2] && !s0_sync[1];
+  wire falling_s1 = s1_sync[2] && !s1_sync[1];
+  wire falling_s2 = s2_sync[2] && !s2_sync[1];
+  wire falling_s3 = s3_sync[2] && !s3_sync[1];
+  wire falling_s4 = s4_sync[2] && !s4_sync[1];
   wire falling_s5 = s5_sync[2] && !s5_sync[1];
+  wire falling_s6 = s6_sync[2] && !s6_sync[1];
+  wire falling_s7 = s7_sync[2] && !s7_sync[1];
 
   reg a0;
 
@@ -200,14 +218,19 @@ module pistorm #(FIFO_DEPTH = 64)(
 	 else begin
 
       if (c7m_falling) begin
-//      if (rising_s5 || rising_s0) begin
         ipl_1 <= ~M68K_IPL_n;
         ipl_2 <= ipl_1;
       end
 
-      if (ipl_2 == ipl_1) begin
+//      if (ipl_2 == ipl_1) begin
+      if ( (ipl_2 == ~M68K_IPL_n) && (ipl_2 == ipl_1) ) begin
         ipl <= ipl_2;
       end
+
+//      if (falling_s4 /*|| rising_s0*/) begin
+//        ipl <= ~M68K_IPL_n;
+//      end
+
       if (ipl != last_ipl) begin
         last_ipl <= ipl;
         if (FIFO_cnt < FIFO_DEPTH) begin
