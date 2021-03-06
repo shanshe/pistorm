@@ -60,6 +60,9 @@ module pistorm #(FIFO_DEPTH = 64)(
   reg [2:0] ipl = 3'd0;
   reg [2:0] ipl_1 = 3'd0;
   reg [2:0] ipl_2 = 3'd0;
+  reg [2:0] ipl_3 = 3'd0;
+  reg [2:0] ipl_q = 3'd0;
+  reg [2:0] ipl_qq = 3'd0;
   reg [2:0] last_ipl = 3'd0;
 
   reg [2:0] ipl_vec[FIFO_DEPTH - 1: 0];
@@ -216,20 +219,19 @@ module pistorm #(FIFO_DEPTH = 64)(
       FIFO_cnt <= 0;
 	 end
 	 else begin
-
-      if (c7m_falling) begin
-        ipl_1 <= ~M68K_IPL_n;
+   
+      ipl_q <= ~M68K_IPL_n;
+      ipl_qq <= ipl_q;
+      
+		if (c7m_falling) begin
+        ipl_1 <= ipl_qq;
         ipl_2 <= ipl_1;
+        ipl_3 <= ipl_2;
       end
 
-//      if (ipl_2 == ipl_1) begin
-      if ( (ipl_2 == ~M68K_IPL_n) && (ipl_2 == ipl_1) ) begin
-        ipl <= ipl_2;
+      if ((ipl_3 == ipl_qq) && (ipl_2 == ipl_qq) && (ipl_1 == ipl_qq)) begin
+        ipl <= ipl_3;
       end
-
-//      if (falling_s4 /*|| rising_s0*/) begin
-//        ipl <= ~M68K_IPL_n;
-//      end
 
       if (ipl != last_ipl) begin
         last_ipl <= ipl;

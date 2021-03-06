@@ -125,7 +125,7 @@ void *iplThread(void *args) {
       irq = 0;
     }
     asm ("nop");
-usleep(0);
+//usleep(0);
     /*if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
 
   char c = 0, c_code = 0, c_type = 0;
   uint32_t last_irq = 0;
-
+/*
   pthread_t id;
   int err;
   err = pthread_create(&id, NULL, &iplThread, NULL);
@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
     printf("can't create IPL thread :[%s]", strerror(err));
   else
     printf("IPL Thread created successfully\n");
-
+*/
   m68k_pulse_reset();
   while (42) {
     if (mouse_hook_enabled) {
@@ -325,7 +325,10 @@ int main(int argc, char *argv[]) {
         m68k_execute(loop_cycles);
     }
 
-    if (irq) {
+//    if (irq)
+    unsigned int value = *(gpio + 13);
+    if (!!(value & (1 << PIN_IPL_ZERO)))
+    {
 //      while (irq)
       unsigned int ipl_count;
       do
@@ -340,7 +343,7 @@ int main(int argc, char *argv[]) {
       }while(ipl_count>1);
     }
     else if (gayleirq && int2_enabled) {
-      write16(0xdff09c, 0x8000 | (1 << 3) );//&& last_irq != 2); FIXME correct?
+      write16(0xdff09c, 0x8000 | (1 << 3) && last_irq != 2); //FIXME correct?
       last_irq = 2;
       M68K_SET_IRQ(2);
     }
