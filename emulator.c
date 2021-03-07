@@ -67,7 +67,7 @@ int mem_fd_gpclk;
 int irq;
 int gayleirq;
 
-#define MUSASHI_HAX
+//#define MUSASHI_HAX
 
 #ifdef MUSASHI_HAX
 #include "m68kcpu.h"
@@ -86,6 +86,8 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
+#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop");
+
 // Configurable emulator options
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300, irq_status = 0;
@@ -101,7 +103,7 @@ void *iplThread(void *args) {
   uint32_t value;
 
   while (1) {
-    /*amiga_reset=gpio_get_reset();
+    amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
       if(amiga_reset==0)
@@ -115,7 +117,7 @@ void *iplThread(void *args) {
         printf("Amiga Reset is up...\n");
       }
       amiga_reset_last=amiga_reset;
-    }*/
+    }
     value = *(gpio + 13);
     if (!!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
@@ -124,9 +126,8 @@ void *iplThread(void *args) {
     else {
       irq = 0;
     }
-    asm ("nop");
-//usleep(0);
-    /*if (gayle_ide_enabled) {
+
+    if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
@@ -134,7 +135,20 @@ void *iplThread(void *args) {
       }
       else
         gayleirq = 0;
-    }*/
+    }
+    //usleep(0);
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
   }
   return args;
 }
@@ -294,7 +308,7 @@ int main(int argc, char *argv[]) {
 
   char c = 0, c_code = 0, c_type = 0;
   uint32_t last_irq = 0;
-/*
+
   pthread_t id;
   int err;
   err = pthread_create(&id, NULL, &iplThread, NULL);
@@ -302,7 +316,7 @@ int main(int argc, char *argv[]) {
     printf("can't create IPL thread :[%s]", strerror(err));
   else
     printf("IPL Thread created successfully\n");
-*/
+
   m68k_pulse_reset();
   while (42) {
     if (mouse_hook_enabled) {
@@ -325,25 +339,21 @@ int main(int argc, char *argv[]) {
         m68k_execute(loop_cycles);
     }
 
-//    if (irq)
-    unsigned int value = *(gpio + 13);
-    if (!!(value & (1 << PIN_IPL_ZERO)))
-    {
-//      while (irq)
-      unsigned int ipl_count;
-      do
-      {
-        unsigned int status=read_reg();
-        ipl_count=status&0xFF;
-        if(ipl_count>0) {
+    if (irq) {
+      unsigned int status=read_reg();
+      unsigned int new_ipl;
+      do {
+        new_ipl=status&0xFF;
+        if(new_ipl>0) {
           last_irq = ((status & 0xe000) >> 13);
+          serv_irq++;
           M68K_SET_IRQ(last_irq);
           m68k_execute(5);
         }
-      }while(ipl_count>1);
+      }while(new_ipl>1);
     }
     else if (gayleirq && int2_enabled) {
-      write16(0xdff09c, 0x8000 | (1 << 3) && last_irq != 2); //FIXME correct?
+      write16(0xdff09c, 0x8000 | (1 << 3));
       last_irq = 2;
       M68K_SET_IRQ(2);
     }
