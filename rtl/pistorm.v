@@ -2,7 +2,7 @@
  * Copyright 2020 Claude Schwarz
  * Copyright 2020 Niklas Ekstrom - rewrite in Verilog
  */
-module pistorm(
+module pistorm #(FIFO_DEPTH = 64)(
     output reg      PI_TXN_IN_PROGRESS, // GPIO0
     output reg      PI_IPL_ZERO,        // GPIO1
     input   [1:0]   PI_A,       // GPIO[3..2]
@@ -64,6 +64,14 @@ module pistorm(
   reg [2:0] ipl_q = 3'd0;
   reg [2:0] ipl_qq = 3'd0;
   reg [2:0] last_ipl = 3'd0;
+  reg [7:0] ipl_count = 8'd0;
+
+  reg [2:0] ipl_vec[FIFO_DEPTH - 1: 0];
+  reg [7:0] rd_ipl_pt = 0;
+  reg [7:0] wr_ipl_pt = 0;
+  reg [7:0] FIFO_cnt = 0;
+
+  integer i;
 
   initial begin
     PI_TXN_IN_PROGRESS <= 1'b0;
@@ -83,6 +91,14 @@ module pistorm(
     ipl_1 <= 3'd0;
     ipl_2 <= 3'd0;
     last_ipl <= 3'd0;
+    ipl_count <= 8'd0;
+
+    for (i=0; i <(FIFO_DEPTH-1); i=i+1) begin
+      ipl_vec[i]= 3'd0;
+    end
+    rd_ipl_pt <= 0;
+    wr_ipl_pt <= 0;
+    FIFO_cnt <= 0;
   end
 
   reg [1:0] rd_sync;
@@ -199,28 +215,59 @@ module pistorm(
   wire c7m_falling = c7m_sync[2] && !c7m_sync[1];
   
   always @(posedge c200m) begin
-
-    ipl_q <= ~M68K_IPL_n;
-    ipl_qq <= ipl_q;
-
-    if (c7m_falling) begin
-      ipl_1 <= ipl_qq;
-      ipl_2 <= ipl_1;
-      ipl_3 <= ipl_2;
+    if(reset_out) begin
+      rd_ipl_pt <= 0;
+      wr_ipl_pt <= 0;
+      FIFO_cnt <= 0;
     end
+    else begin
 
-    if ((ipl_3 == ipl_qq) && (ipl_2 == ipl_qq) && (ipl_1 == ipl_qq)) begin
-      ipl <= ipl_3;
-    end
+      ipl_q <= ~M68K_IPL_n;
+      ipl_qq <= ipl_q;
 
-    if (ipl != last_ipl) begin
-      last_ipl <= ipl;
-      PI_IPL_ZERO <= 1'b1;
-    end
+      if (c7m_rising) begin
+        ipl_1 <= ipl_qq;
+        ipl_2 <= ipl_1;
+        ipl_3 <= ipl_2;
+      end
 
-    if (rd_rising && (PI_A == REG_STATUS)) begin
-      data_out <= {ipl,12'd0,PI_IPL_ZERO};
-      PI_IPL_ZERO <= 1'b0;
+      if (/*(ipl_3 == ipl_2) &&*/ (ipl_2 == ipl_1) && (ipl_1 == ipl_qq)) begin
+        ipl <= ipl_1;
+      end
+
+      if (ipl != last_ipl) begin
+        last_ipl <= ipl;
+        if (FIFO_cnt < FIFO_DEPTH) begin
+          ipl_vec[wr_ipl_pt] <= ipl;
+          if(wr_ipl_pt == (FIFO_DEPTH - 1))begin
+            wr_ipl_pt <= 0;
+          end
+          else begin
+            wr_ipl_pt <= wr_ipl_pt + 1;
+          end
+          ipl_count = ipl_count + 8'd1;
+          PI_IPL_ZERO <= 1'b1;
+          FIFO_cnt = FIFO_cnt + 1;
+        end
+      end
+//      else begin
+        if (rd_rising && (PI_A == REG_STATUS)) begin
+          data_out <= {ipl_vec[rd_ipl_pt],5'd0,ipl_count};
+          if (FIFO_cnt > 0) begin
+            if(rd_ipl_pt == (FIFO_DEPTH - 1)) begin
+              rd_ipl_pt <= 0;
+            end
+            else begin
+              rd_ipl_pt <= rd_ipl_pt + 1;
+            end
+            PI_IPL_ZERO <= (FIFO_cnt > 1);
+            FIFO_cnt = FIFO_cnt - 1;
+          end
+          else begin
+            PI_IPL_ZERO <= 1'b0;
+          end
+        end
+//      end
     end
   end
 

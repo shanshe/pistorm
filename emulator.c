@@ -67,7 +67,7 @@ int mem_fd_gpclk;
 int irq;
 int gayleirq;
 
-//#define MUSASHI_HAX
+#define MUSASHI_HAX
 
 #ifdef MUSASHI_HAX
 #include "m68kcpu.h"
@@ -86,8 +86,6 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
-#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop");
-
 // Configurable emulator options
 unsigned int cpu_type = M68K_CPU_TYPE_68000;
 unsigned int loop_cycles = 300, irq_status = 0;
@@ -103,7 +101,7 @@ void *iplThread(void *args) {
   uint32_t value;
 
   while (1) {
-    amiga_reset=gpio_get_reset();
+    /*amiga_reset=gpio_get_reset();
     if(amiga_reset!=amiga_reset_last)
     {
       if(amiga_reset==0)
@@ -117,17 +115,18 @@ void *iplThread(void *args) {
         printf("Amiga Reset is up...\n");
       }
       amiga_reset_last=amiga_reset;
-    }
+    }*/
     value = *(gpio + 13);
-    if (!!(value & (1 << PIN_IPL_ZERO))) {
-      irq = 1;
+    if(value & (1 << PIN_IPL_ZERO)) {
+      irq=1;
       M68K_END_TIMESLICE;
     }
     else {
-      irq = 0;
+      irq=0;
     }
-
-    if (gayle_ide_enabled) {
+    asm ("nop");
+//usleep(0);
+    /*if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
@@ -135,20 +134,7 @@ void *iplThread(void *args) {
       }
       else
         gayleirq = 0;
-    }
-    //usleep(0);
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
+    }*/
   }
   return args;
 }
@@ -307,7 +293,7 @@ int main(int argc, char *argv[]) {
   cpu_pulse_reset();
 
   char c = 0, c_code = 0, c_type = 0;
-  uint32_t last_irq = 0;
+  unsigned int last_irq = 0;
 
   pthread_t id;
   int err;
@@ -340,20 +326,58 @@ int main(int argc, char *argv[]) {
     }
 
     if (irq) {
-      unsigned int status=read_reg();
-      unsigned int new_ipl;
-      do {
-        new_ipl=status&0xFF;
-        if(new_ipl>0) {
-          last_irq = ((status & 0xe000) >> 13);
-          serv_irq++;
-          M68K_SET_IRQ(last_irq);
-          m68k_execute(5);
+      unsigned int status = read_reg();
+      last_irq  = ((status >> 13) & 7);
+
+//#define DEBUG_DOTS
+#ifdef DEBUG_DOTS
+      signed char ipl_count = (char)status;
+      static signed char count=0;
+      count++;
+serv_irq=last_irq;
+
+      if(ipl_count!=count) {
+        if((signed char)(ipl_count-count)>0)
+          printf("ipl %3d count %3d\tlost %d IRQ %d\n",ipl_count,count,ipl_count-count,(status>>13)&7);
+        else {
+          count=ipl_count;
+          printf("x");
+          goto finish;
         }
-      }while(new_ipl>1);
+        count=ipl_count;
+      }
+
+      static int state=0;
+      switch(state) {
+        case 0:
+          if(count>30) {
+            state=1;
+          }
+          break;
+        case 1:
+          if(count<25) {
+            static unsigned int c=0;
+            state=0;
+            c++;
+            if(c!=9)
+              printf(".");
+            else {
+              printf(".\n");
+              c=0;
+            }
+          }
+          break;
+      }
+finish: ;
+#endif
+
+      M68K_SET_IRQ(last_irq);
+//      m68k_execute(loop_cycles);
+
     }
-    else if (gayleirq && int2_enabled) {
-      write16(0xdff09c, 0x8000 | (1 << 3));
+    else
+    if (gayleirq && int2_enabled) {
+      write16(0xdff09c, 0x8000 | (1 << 3) );//&& last_irq != 2); // FIXME is this correct?
       last_irq = 2;
       M68K_SET_IRQ(2);
     }
