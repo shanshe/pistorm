@@ -225,13 +225,13 @@ module pistorm #(FIFO_DEPTH = 64)(
       ipl_q <= ~M68K_IPL_n;
       ipl_qq <= ipl_q;
 
-      if (c7m_rising) begin
+      if (c7m_falling) begin
         ipl_1 <= ipl_qq;
         ipl_2 <= ipl_1;
         ipl_3 <= ipl_2;
       end
 
-      if (/*(ipl_3 == ipl_2) &&*/ (ipl_2 == ipl_1) && (ipl_1 == ipl_qq)) begin
+      if ((ipl_3 == ipl_2) && (ipl_2 == ipl_1) && (ipl_1 == ipl_qq)) begin
         ipl <= ipl_1;
       end
 

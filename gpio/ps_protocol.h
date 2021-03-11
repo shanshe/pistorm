@@ -61,8 +61,6 @@
 #define GPFSEL1_OUTPUT 0x09249249
 #define GPFSEL2_OUTPUT 0x00000249
 
-void m68k_set_irq(unsigned int int_level);
-
 unsigned int ps_read_8(unsigned int address);
 unsigned int ps_read_16(unsigned int address);
 unsigned int ps_read_32(unsigned int address);
