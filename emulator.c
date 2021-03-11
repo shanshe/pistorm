@@ -137,7 +137,7 @@ void *ipl_task(void *args) {
     }
     value = *(gpio + 13);
 
-    if (!(value & (1 << PIN_IPL_ZERO))) {
+    if (!!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
       old_irq = irq_delay;
       NOP
