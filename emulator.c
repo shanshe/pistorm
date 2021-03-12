@@ -111,36 +111,88 @@ char keyboard_file[256] = "/dev/input/event1";
 
 uint64_t trig_irq = 0, serv_irq = 0;
 uint16_t irq_delay = 0;
+unsigned int amiga_reset=0, amiga_reset_last=0;
+unsigned int do_reset=0;
 
 #define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
 
 void *ipl_task(void *args) {
   printf("IPL thread running\n");
+  uint16_t old_irq = 0;
+  uint32_t value;
 
+  value = *(gpio + 13);
+
+#define OLD_BITSTREAM
+
+#ifdef OLD_BITSTREAM
   while (1) {
-    if (!gpio_get_irq()) {
+//    if (!gpio_get_irq()) {
+//      irq = 1;
+//      m68k_end_timeslice();
+//    }
+//    else
+//      irq = 0;
+    if (!(value & (1 << PIN_IPL_ZERO))) {
       irq = 1;
-      m68k_end_timeslice();
+      NOP
+      M68K_END_TIMESLICE;
     }
-    else
-      irq = 0;
+    else {
+      if (irq) {
+        if (old_irq) {
+          old_irq--;
+        }
+        else {
+          irq = 0;
+        }
+        NOP
+        M68K_END_TIMESLICE;
+      }
+    }
+#else
 
+    amiga_reset=(value & (1 << PIN_RESET));
+    if(amiga_reset!=amiga_reset_last)
+    {
+      if(amiga_reset==0)
+      {
+        printf("Amiga Reset is down...\n");
+        do_reset=1;
+        M68K_END_TIMESLICE;
+      }
+      else
+      {
+        printf("Amiga Reset is up...\n");
+      }
+      amiga_reset_last=amiga_reset;
+    }
+
+    if (!!(value & (1 << PIN_IPL_ZERO))) {
+      irq = 1;
+      NOP
+      M68K_END_TIMESLICE;
+    }
+    else {
+      irq = 0;
+    }
+#endif
     if (gayle_ide_enabled) {
       if (((gayle_int & 0x80) || gayle_a4k_int) && (get_ide(0)->drive[0].intrq || get_ide(0)->drive[1].intrq)) {
         //get_ide(0)->drive[0].intrq = 0;
         gayleirq = 1;
-        m68k_end_timeslice();
+        M68K_END_TIMESLICE;
       }
       else
         gayleirq = 0;
     }
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-    NOP NOP NOP NOP NOP NOP
-//    usleep(0);
+    //usleep(0);
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    /*NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP NOP NOP*/
   }
   return args;
 }
@@ -169,6 +221,7 @@ cpu_loop:
       m68k_execute(loop_cycles);
   }
 
+#ifdef OLD_BITSTREAM
   if (irq) {
     unsigned int status = read_reg();
     m68k_set_irq((status & 0xe000) >> 13);
@@ -177,10 +230,11 @@ cpu_loop:
     write16(0xdff09c, 0x8000 | (1 << 3));
     m68k_set_irq(2);
   }
-  /*else {
+  else {
     m68k_set_irq(0);
-  }*/
- /* if (irq) {
+  }
+#else
+  if (irq) {
     while (irq) {
       last_irq = ((read_reg() & 0xe000) >> 13);
       if (last_irq != last_last_irq) {
@@ -198,13 +252,14 @@ cpu_loop:
     M68K_SET_IRQ(0);
     last_last_irq = 0;
   }
-  *//*else {
+  /*else {
     if (last_irq != 0) {
       M68K_SET_IRQ(0);
       last_last_irq = last_irq;
       last_irq = 0;
     }
   }*/
+#endif
 
   if (mouse_hook_enabled && (mouse_extra != 0x00)) {
     // mouse wheel events have occurred; unlike l/m/r buttons, these are queued as keypresses, so add to end of buffer

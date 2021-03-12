@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Claude Schwarz
- * Copyright 2020 Niklas Ekström - rewrite in Verilog
+ * Copyright 2020 Niklas Ekstrom - rewrite in Verilog
  */
-module pistorm(
+module pistorm #(FIFO_DEPTH = 64)(
     output reg      PI_TXN_IN_PROGRESS, // GPIO0
     output reg      PI_IPL_ZERO,        // GPIO1
     input   [1:0]   PI_A,       // GPIO[3..2]
     input           PI_CLK,     // GPIO4
-    input           PI_UNUSED,  // GPIO5
+    output reg      PI_RESET,   // GPIO5
     input           PI_RD,      // GPIO6
     input           PI_WR,      // GPIO7
     inout   [15:0]  PI_D,       // GPIO[23..8]
@@ -57,9 +57,27 @@ module pistorm(
   localparam REG_ADDR_HI = 2'd2;
   localparam REG_STATUS = 2'd3;
 
+  reg [2:0] ipl = 3'd0;
+  reg [2:0] ipl_1 = 3'd0;
+  reg [2:0] ipl_2 = 3'd0;
+  reg [2:0] ipl_3 = 3'd0;
+  reg [2:0] ipl_q = 3'd0;
+  reg [2:0] ipl_qq = 3'd0;
+  reg [2:0] last_ipl = 3'd0;
+  reg [7:0] ipl_count = 8'd0;
+
+  reg [2:0] ipl_vec[FIFO_DEPTH - 1: 0];
+  reg [7:0] rd_ipl_pt = 0;
+  reg [7:0] wr_ipl_pt = 0;
+  reg [7:0] FIFO_cnt = 0;
+
+  integer i;
+
   initial begin
     PI_TXN_IN_PROGRESS <= 1'b0;
     PI_IPL_ZERO <= 1'b0;
+
+    PI_RESET <= 1'b0;
 
     M68K_FC <= 3'd0;
 
@@ -69,6 +87,18 @@ module pistorm(
     M68K_VMA_n <= 1'b1;
 
     M68K_BG_n <= 1'b1;
+    ipl <= 3'd0;
+    ipl_1 <= 3'd0;
+    ipl_2 <= 3'd0;
+    last_ipl <= 3'd0;
+    ipl_count <= 8'd0;
+
+    for (i=0; i <(FIFO_DEPTH-1); i=i+1) begin
+      ipl_vec[i]= 3'd0;
+    end
+    rd_ipl_pt <= 0;
+    wr_ipl_pt <= 0;
+    FIFO_cnt <= 0;
   end
 
   reg [1:0] rd_sync;
@@ -83,13 +113,7 @@ module pistorm(
   wire wr_rising = !wr_sync[1] && wr_sync[0];
 
   reg [15:0] data_out;
-  assign PI_D = PI_A == REG_STATUS && PI_RD ? data_out : 16'bz;
-
-  always @(posedge c200m) begin
-    if (rd_rising && PI_A == REG_STATUS) begin
-      data_out <= {ipl, 13'd0};
-    end
-  end
+  assign PI_D = (PI_A == REG_STATUS) && PI_RD ? data_out : 16'bz;
 
   reg [15:0] status;
   wire reset_out = !status[1];
@@ -103,28 +127,55 @@ module pistorm(
   reg op_lds_n = 1'b1;
 
   always @(*) begin
-    LTCH_D_WR_U <= PI_A == REG_DATA && PI_WR;
-    LTCH_D_WR_L <= PI_A == REG_DATA && PI_WR;
+    LTCH_D_WR_U <= (PI_A == REG_DATA) && PI_WR;
+    LTCH_D_WR_L <= (PI_A == REG_DATA) && PI_WR;
 
-    LTCH_A_0 <= PI_A == REG_ADDR_LO && PI_WR;
-    LTCH_A_8 <= PI_A == REG_ADDR_LO && PI_WR;
+    LTCH_A_0 <= (PI_A == REG_ADDR_LO) && PI_WR;
+    LTCH_A_8 <= (PI_A == REG_ADDR_LO) && PI_WR;
 
-    LTCH_A_16 <= PI_A == REG_ADDR_HI && PI_WR;
-    LTCH_A_24 <= PI_A == REG_ADDR_HI && PI_WR;
+    LTCH_A_16 <= (PI_A == REG_ADDR_HI) && PI_WR;
+    LTCH_A_24 <= (PI_A == REG_ADDR_HI) && PI_WR;
 
-    LTCH_D_RD_OE_n <= !(PI_A == REG_DATA && PI_RD);
+    LTCH_D_RD_OE_n <= !((PI_A == REG_DATA) && PI_RD);
   end
 
+  reg [2:0] s0_sync;
   reg [2:0] s1_sync;
+  reg [2:0] s2_sync;
+  reg [2:0] s3_sync;
+  reg [2:0] s4_sync;
+  reg [2:0] s5_sync;
+  reg [2:0] s6_sync;
   reg [2:0] s7_sync;
 
   always @(posedge c200m) begin
+    s0_sync <= {s0_sync[1:0], S0};
     s1_sync <= {s1_sync[1:0], S1};
+    s2_sync <= {s2_sync[1:0], S2};
+    s3_sync <= {s3_sync[1:0], S3};
+    s4_sync <= {s4_sync[1:0], S4};
+    s5_sync <= {s5_sync[1:0], S5};
+    s6_sync <= {s6_sync[1:0], S6};
     s7_sync <= {s7_sync[1:0], S7};
   end
 
+
+  wire rising_s0 = !s0_sync[2] && s0_sync[1];
   wire rising_s1 = !s1_sync[2] && s1_sync[1];
+  wire rising_s2 = !s2_sync[2] && s2_sync[1];
+  wire rising_s3 = !s3_sync[2] && s3_sync[1];
+  wire rising_s4 = !s4_sync[2] && s4_sync[1];
+  wire rising_s5 = !s5_sync[2] && s5_sync[1];
+  wire rising_s6 = !s6_sync[2] && s6_sync[1];
   wire rising_s7 = !s7_sync[2] && s7_sync[1];
+  wire falling_s0 = s0_sync[2] && !s0_sync[1];
+  wire falling_s1 = s1_sync[2] && !s1_sync[1];
+  wire falling_s2 = s2_sync[2] && !s2_sync[1];
+  wire falling_s3 = s3_sync[2] && !s3_sync[1];
+  wire falling_s4 = s4_sync[2] && !s4_sync[1];
+  wire falling_s5 = s5_sync[2] && !s5_sync[1];
+  wire falling_s6 = s6_sync[2] && !s6_sync[1];
+  wire falling_s7 = s7_sync[2] && !s7_sync[1];
 
   reg a0;
 
@@ -162,21 +213,66 @@ module pistorm(
 
   wire c7m_rising = !c7m_sync[2] && c7m_sync[1];
   wire c7m_falling = c7m_sync[2] && !c7m_sync[1];
+  
+  always @(posedge c200m) begin
+    if(reset_out) begin
+      rd_ipl_pt <= 0;
+      wr_ipl_pt <= 0;
+      FIFO_cnt <= 0;
+    end
+    else begin
 
-  reg [2:0] ipl;
-  reg [2:0] ipl_1;
-  reg [2:0] ipl_2;
+      ipl_q <= ~M68K_IPL_n;
+      ipl_qq <= ipl_q;
+
+      if (c7m_falling) begin
+        ipl_1 <= ipl_qq;
+        ipl_2 <= ipl_1;
+        ipl_3 <= ipl_2;
+      end
+
+      if ((ipl_3 == ipl_2) && (ipl_2 == ipl_1) && (ipl_1 == ipl_qq)) begin
+        ipl <= ipl_1;
+      end
+
+      if (ipl != last_ipl) begin
+        last_ipl <= ipl;
+        if (FIFO_cnt < FIFO_DEPTH) begin
+          ipl_vec[wr_ipl_pt] <= ipl;
+          if(wr_ipl_pt == (FIFO_DEPTH - 1))begin
+            wr_ipl_pt <= 0;
+          end
+          else begin
+            wr_ipl_pt <= wr_ipl_pt + 1;
+          end
+          ipl_count = ipl_count + 8'd1;
+          PI_IPL_ZERO <= 1'b1;
+          FIFO_cnt = FIFO_cnt + 1;
+        end
+      end
+//      else begin
+        if (rd_rising && (PI_A == REG_STATUS)) begin
+          data_out <= {ipl_vec[rd_ipl_pt],5'd0,ipl_count};
+          if (FIFO_cnt > 0) begin
+            if(rd_ipl_pt == (FIFO_DEPTH - 1)) begin
+              rd_ipl_pt <= 0;
+            end
+            else begin
+              rd_ipl_pt <= rd_ipl_pt + 1;
+            end
+            PI_IPL_ZERO <= (FIFO_cnt > 1);
+            FIFO_cnt = FIFO_cnt - 1;
+          end
+          else begin
+            PI_IPL_ZERO <= 1'b0;
+          end
+        end
+//      end
+    end
+  end
 
   always @(posedge c200m) begin
-    if (c7m_falling) begin
-      ipl_1 <= ~M68K_IPL_n;
-      ipl_2 <= ipl_1;
-    end
-
-    if (ipl_2 == ipl_1)
-      ipl <= ipl_2;
-
-    PI_IPL_ZERO <= ipl == 3'd0;
+    PI_RESET <= reset_out ? 1'b1 : M68K_RESET_n;
   end
 
   reg [3:0] e_counter = 4'd0;
@@ -239,12 +335,12 @@ module pistorm(
       end
 
       2'd2: begin // S4|Sw -> S5|Sw
-        if (!M68K_DTACK_n || (!M68K_VMA_n && e_counter == 4'd8)) begin
+        if (!M68K_DTACK_n || (!M68K_VMA_n && (e_counter == 4'd8))) begin
           wait_dtack <= 1'b0;
           state <= state + 2'd1;
         end
         else begin
-          if (!M68K_VPA_n && e_counter == 4'd2) begin
+          if (!M68K_VPA_n && (e_counter == 4'd2)) begin
             M68K_VMA_n <= 1'b0;
           end
           wait_dtack <= 1'b1;
