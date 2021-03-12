@@ -72,6 +72,8 @@ unsigned int loop_cycles = 300;
 struct emulator_config *cfg = NULL;
 char keyboard_file[256] = "/dev/input/event1";
 
+#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
+
 void *iplThread(void *args) {
   printf("IPL thread running\n");
 
@@ -92,7 +94,13 @@ void *iplThread(void *args) {
       else
         gayleirq = 0;
     }
-    usleep(0);
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+    NOP NOP NOP NOP NOP NOP
+//    usleep(0);
   }
   return args;
 }
