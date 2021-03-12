@@ -5,28 +5,43 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <endian.h>
-#include "../hunk-reloc.h"
-#include "piscsi.h"
+
+#include "config_file/config_file.h"
+#include "gpio/ps_protocol.h"
 #include "piscsi-enums.h"
-#include "../../../config_file/config_file.h"
-#include "../../../gpio/ps_protocol.h"
+#include "piscsi.h"
+#include "platforms/amiga/hunk-reloc.h"
 
 #define BE(val) be32toh(val)
 #define BE16(val) be16toh(val)
 
-// Comment these lines to restore debug output:
-#define DEBUG(...)
-//#define DEBUG printf
-#define DEBUG_TRIVIAL(...)
+// Uncomment the line below to enable debug output
+//#define PISCSI_DEBUG
+
+#ifdef PISCSI_DEBUG
+#define DEBUG printf
 //#define DEBUG_TRIVIAL printf
+#define DEBUG_TRVIAL(...)
+
+extern void stop_cpu_emulation(uint8_t disasm_cur);
+
+static const char *op_type_names[4] = {
+    "BYTE",
+    "WORD",
+    "LONGWORD",
+    "MEM",
+};
+#else
+#define DEBUG(...)
+#define DEBUG_TRIVIAL(...)
 #define stop_cpu_emulation(...)
+#endif
 
 #ifdef FAKESTORM
 #define lseek64 lseek
 #endif
 
 extern struct emulator_config *cfg;
-extern void stop_cpu_emulation(uint8_t disasm_cur);
 
 struct piscsi_dev devs[8];
 struct piscsi_fs filesystems[NUM_FILESYSTEMS];
@@ -44,16 +59,7 @@ uint32_t rom_partition_prio[128];
 uint32_t rom_partition_dostype[128];
 uint32_t rom_cur_partition = 0, rom_cur_fs = 0;
 
-
-
 extern unsigned char ac_piscsi_rom[];
-
-static const char *op_type_names[4] = {
-    "BYTE",
-    "WORD",
-    "LONGWORD",
-    "MEM",
-};
 
 //static const char *partition_marker = "PART";
 
@@ -208,18 +214,19 @@ void piscsi_refresh_drives() {
 void piscsi_find_filesystems(struct piscsi_dev *d) {
     if (!d->num_partitions)
         return;
-    
+
     uint8_t fs_found = 0;
-    
+
     uint8_t *fhb_block = malloc(512);
 
     lseek64(d->fd, d->fshd_offs, SEEK_SET);
 
     struct FileSysHeaderBlock *fhb = (struct FileSysHeaderBlock *)fhb_block;
     read(d->fd, fhb_block, 512);
-    
+
     while (BE(fhb->fhb_ID) == FS_IDENTIFIER) {
         char *dosID = (char *)&fhb->fhb_DosType;
+#ifdef PISCSI_DEBUG
         uint16_t *fsVer = (uint16_t *)&fhb->fhb_Version;
 
         DEBUG("[FSHD] FSHD Block found.\n");
@@ -232,13 +239,14 @@ void piscsi_find_filesystems(struct piscsi_dev *d) {
         DEBUG("[FSHD] Prio: %d Startup: %d\n", BE(fhb->fhb_Priority), BE(fhb->fhb_Startup));
         DEBUG("[FSHD] SegListBlocks: %d GlobalVec: %d\n", BE(fhb->fhb_Priority), BE(fhb->fhb_Startup));
         DEBUG("[FSHD] FileSysName: %s\n", fhb->fhb_FileSysName + 1);
+#endif
 
         for (int i = 0; i < NUM_FILESYSTEMS; i++) {
             if (filesystems[i].FS_ID == fhb->fhb_DosType) {
                 DEBUG("[FSHD] File system %c%c%c/%d already loaded. Skipping.\n", dosID[0], dosID[1], dosID[2], dosID[3]);
                 if (BE(fhb->fhb_Next) == 0xFFFFFFFF)
                     goto fs_done;
-                
+
                 goto skip_fs_load_lseg;
             }
         }
@@ -414,10 +422,36 @@ void print_piscsi_debug_message(int index) {
         case DBG_SCSI_RDG:
             DEBUG("[PISCSI] Get SCSI RDG MODE SENSE.\n");
             break;
+        case DBG_SCSICMD_RW10:
+#ifdef PISCSI_DEBUG
+            r = get_mapped_item_by_address(cfg, piscsi_dbg[0]);
+            struct SCSICmd_RW10 *rwdat = NULL;
+            char data[10];
+            if (r != -1) {
+                uint32_t addr = piscsi_dbg[0] - cfg->map_offset[r];
+                rwdat = (struct SCSICmd_RW10 *)(&cfg->map_data[r][addr]);
+            }
+            else {
+                DEBUG_TRIVIAL("[RW10] scsiData: %.8X\n", piscsi_dbg[0]);
+                for (int i = 0; i < 10; i++) {
+                    data[i] = read8(piscsi_dbg[0] + i);
+                }
+                rwdat = data;
+            }
+            if (rwdat) {
+                DEBUG_TRIVIAL("[RW10] CMD: %.2X\n", rwdat->opcode);
+                DEBUG_TRIVIAL("[RW10] RDP: %.2X\n", rwdat->rdprotect_flags);
+                DEBUG_TRIVIAL("[RW10] Block: %d (%d)\n", rwdat->block, BE(rwdat->block));
+                DEBUG_TRIVIAL("[RW10] Res_Group: %.2X\n", rwdat->res_groupnum);
+                DEBUG_TRIVIAL("[RW10] Len: %d (%d)\n", rwdat->len, BE16(rwdat->len));
+            }
+#endif
+            break;
         case DBG_SCSI_DEBUG_MODESENSE_6:
             DEBUG_TRIVIAL("[PISCSI] SCSI ModeSense debug. Data: %.8X\n", piscsi_dbg[0]);
             r = get_mapped_item_by_address(cfg, piscsi_dbg[0]);
             if (r != -1) {
+#ifdef PISCSI_DEBUG
                 uint32_t addr = piscsi_dbg[0] - cfg->map_offset[r];
                 struct SCSICmd_ModeSense6 *sense = (struct SCSICmd_ModeSense6 *)(&cfg->map_data[r][addr]);
                 DEBUG_TRIVIAL("[SenseData] CMD: %.2X\n", sense->opcode);
@@ -426,6 +460,7 @@ void print_piscsi_debug_message(int index) {
                 DEBUG_TRIVIAL("[SenseData] PageCodes: %.2X %.2X\n", (sense->pc_pagecode & 0x3F), sense->subpage_code);
                 DEBUG_TRIVIAL("[SenseData] AllocLen: %d\n", sense->alloc_len);
                 DEBUG_TRIVIAL("[SenseData] Control: %.2X (%d)\n", sense->control, sense->control);
+#endif
             }
             else {
                 DEBUG("[!!!PISCSI] ModeSense data not immediately available.\n");
@@ -471,6 +506,9 @@ void piscsi_debugme(uint32_t index) {
 
 void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
     int32_t r;
+#ifndef PISCSI_DEBUG
+    if (type) {}
+#endif
 
     struct piscsi_dev *d = &devs[piscsi_cur_drive];
 
@@ -578,7 +616,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
                 memcpy(dst_data + addr, piscsi_rom_ptr + PISCSI_DRIVER_OFFSET, 0x4000 - PISCSI_DRIVER_OFFSET);
 
                 piscsi_hinfo.base_offset = val;
-                
+
                 reloc_hunks(piscsi_hreloc, dst_data + addr, &piscsi_hinfo);
 
                 #define PUTNODELONG(val) *(uint32_t *)&dst_data[p_offs] = htobe32(val); p_offs += 4;
@@ -648,7 +686,7 @@ void handle_piscsi_write(uint32_t addr, uint32_t val, uint8_t type) {
 skip_disk:;
                 }
             }
-           
+
             break;
         }
         case PISCSI_CMD_NEXTPART:
@@ -678,7 +716,9 @@ skip_disk:;
             if (r != -1) {
                 uint32_t addr = val - cfg->map_offset[r];
                 struct DeviceNode *node = (struct DeviceNode *)(cfg->map_data[r] + addr);
+#ifdef PISCSI_DEBUG
                 char *dosID = (char *)&rom_partition_dostype[rom_cur_partition];
+#endif
                 DEBUG("[PISCSI] Partition DOSType is %c%c%c/%d\n", dosID[0], dosID[1], dosID[2], dosID[3]);
                 for (i = 0; i < piscsi_num_fs; i++) {
                     if (rom_partition_dostype[rom_cur_partition] == filesystems[i].FS_ID) {
@@ -741,7 +781,7 @@ uint32_t handle_piscsi_read(uint32_t addr, uint8_t type) {
         }
         return 0;
     }
-    
+
     switch (addr & 0xFFFF) {
         case PISCSI_CMD_ADDR1: case PISCSI_CMD_ADDR2: case PISCSI_CMD_ADDR3: case PISCSI_CMD_ADDR4: {
             int i = ((addr & 0xFFFF) - PISCSI_CMD_ADDR1) / 4;

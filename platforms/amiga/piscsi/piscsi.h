@@ -1,3 +1,7 @@
+#include <stdint.h>
+
+#include "platforms/amiga/hunk-reloc.h"
+
 #define	TDF_EXTCOM (1<<15)
 
 #define CMD_INVALID	0
@@ -212,6 +216,15 @@ struct SCSICmd_ModeSense6 {
     uint8_t pc_pagecode;
     uint8_t subpage_code;
     uint8_t alloc_len;
+    uint8_t control;
+};
+
+struct SCSICmd_RW10 {
+    uint8_t opcode;
+    uint8_t rdprotect_flags;
+    uint32_t block;
+    uint8_t res_groupnum;
+    uint16_t len;
     uint8_t control;
 };
 
