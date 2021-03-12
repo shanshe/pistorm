@@ -94,8 +94,6 @@ extern int m68ki_remaining_cycles;
 #define M68K_END_TIMESLICE m68k_end_timeslice()
 #endif
 
-#define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop");
-
 #define DEBUG_EMULATOR
 #ifdef DEBUG_EMULATOR
 #define DEBUG printf
@@ -121,12 +119,12 @@ void *ipl_task(void *args) {
   uint16_t old_irq = 0;
   uint32_t value;
 
-  value = *(gpio + 13);
+  while (1) {
+    value = *(gpio + 13);
 
 #define OLD_BITSTREAM
 
 #ifdef OLD_BITSTREAM
-  while (1) {
 //    if (!gpio_get_irq()) {
 //      irq = 1;
 //      m68k_end_timeslice();
