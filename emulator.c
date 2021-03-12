@@ -109,9 +109,12 @@ unsigned int loop_cycles = 300, irq_status = 0;
 struct emulator_config *cfg = NULL;
 char keyboard_file[256] = "/dev/input/event1";
 
+uint64_t trig_irq = 0, serv_irq = 0;
+uint16_t irq_delay = 0;
+
 #define NOP asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
 
-void *iplThread(void *args) {
+void *ipl_task(void *args) {
   printf("IPL thread running\n");
 
   while (1) {
@@ -549,7 +552,7 @@ void cpu_pulse_reset(void) {
   if (cfg->platform->handle_reset)
     cfg->platform->handle_reset(cfg);
 
-  m68k_write_memory_16(INTENA, 0x7FFF);
+//  m68k_write_memory_16(INTENA, 0x7FFF);
   ovl = 1;
   m68k_write_memory_8(0xbfe201, 0x0001);  // AMIGA OVL
   m68k_write_memory_8(0xbfe001, 0x0001);  // AMIGA OVL high (ROM@0x0)
